@@ -1,0 +1,2595 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>JSON Data Modeler</title>
+  <style>
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* ← スクロールバーを非表示にする */
+  height: 100%;
+}
+
+#cy {
+  width: 100%;
+  height: 100vh; /* ← ビューポート全体に広げる */
+  display: block;
+}
+
+#fieldEditor label {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+#nodeDialog label {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+#implEditor {
+  display: none;
+  position: fixed;
+  left: 20px;
+  top: 100px;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 15px;
+  z-index: 999;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+#implEditor table {
+  display: block;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.generic-row {
+  background-color: #eef;
+}
+.non-generic-row {
+  background-color: #fff;
+}
+
+#attrList {
+  max-height: 300px; /* 必要に応じて高さ調整 */
+  overflow-y: auto;
+  border-top: 1px solid #ccc;
+  padding-top: 8px;
+}
+
+#currentNodeInfo {
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+#edgeEditPanel {
+  position: fixed;
+  top: 120px;
+  left: 120px;
+  background: #fff;
+  padding: 15px;
+  border: 1px solid #888;
+  box-shadow: 0 0 6px rgba(0,0,0,0.3);
+  display: none;
+  z-index: 9000; /* modalOverlayより後ろに */
+}
+
+#attrType {
+  width: 120px;
+  margin-left: 6px;
+  padding: 4px;
+}
+
+#typeModal {
+  position: fixed;
+  z-index: 10000; /* modalOverlayより前に */
+}
+
+#modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.3);
+  z-index: 9999; /* 最前面に */
+  pointer-events: auto;
+}
+
+#projectionFieldsList {
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.menuBar {
+  display: flex;
+  gap: 12px;
+  padding: 6px;
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #ccc;
+}
+
+.menuGroup {
+  position: relative;
+}
+
+.menuButton {
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.menuDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  min-width: 120px;
+  max-width: 160px;
+}
+
+.menuDropdown button {
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuDropdown button:hover {
+  background-color: #eef;
+}
+
+option.generic {
+  background-color: #88c;
+  color: #fff;
+}
+option.non-generic {
+  background-color: #eee;
+  color: #000;
+}
+
+.dialog {
+  display: none; /* 初期状態は非表示 */
+  position: fixed;
+  top: 20%;
+  left: 20%;
+  width: 60%;
+  height: auto;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 1em;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+/* JSON 表示関係 プレビュー */
+#previewDialog {
+  max-height: 70vh;
+  overflow: auto;
+}
+
+#previewContent {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+#previewContent {
+  max-height: 60vh;   /* JSON 部分だけに高さ制限 */
+  overflow: auto;     /* JSON 部分にスクロールバーを出す */
+  background: #f9f9f9;
+  padding: 8px;
+  border: 1px solid #ddd;
+  white-space: pre;   /* 改行保持、横スクロール許可 */
+}
+
+  </style>
+  <!-- CDNライブラリ読み込み -->
+  <script src="https://unpkg.com/cytoscape@3.27.0/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+  <script>
+    cytoscape.use(window.cytoscapeDagre);
+  </script>
+</head>
+<body>
+  <!-- トップメニュー ここから -->
+  <div class="menuBar">
+    <!-- ファイル メニューグループも追加可能 -->
+    <div class="menuGroup">
+      <button class="menuButton" onclick="toggleMenu('fileMenu')">ファイル ▾</button>
+      <div id="fileMenu" class="menuDropdown" style="display:none;">
+        <button onclick="newModel(); closeAllMenus()">新規作成</button>
+        <button id="importModelBtn">スクリプト...</button>
+        <button id="load">読込み...</button>
+        <button id="save">保存...</button>
+      </div>
+    </div>
+    <!-- 編集 メニューグループも追加可能 -->
+    <div class="menuGroup">
+      <button class="menuButton" onclick="toggleMenu('editMenu')">編集 ▾</button>
+      <div id="editMenu" class="menuDropdown" style="display:none;">
+        <button onclick="openNodeDialog(); closeAllMenus()">ノード追加</button>
+        <button onclick="openEdgeDialog(); closeAllMenus()">エッジ追加</button>
+        <button onclick="deleteSelected(); closeAllMenus()">選択を削除</button>
+        <button onclick="clearSelection(); closeAllMenus()">選択解除</button>
+        <button onclick="openImplEditor(); closeAllMenus()">ノード実装名</button>
+      </div>
+    </div>
+    <!-- 表示 メニューグループ -->
+    <div class="menuGroup">
+      <button class="menuButton" onclick="toggleMenu('viewMenu')">表示 ▾</button>
+      <div id="viewMenu" class="menuDropdown" style="display:none;">
+        <button onclick="showAllNodes(); closeAllMenus()">全ノード表示</button>
+        <button onclick="showOnlyNonGeneric(); closeAllMenus()">通常ノード表示</button>
+        <button onclick="showOnlyGeneric(); closeAllMenus()">型ノード表示</button>
+        <button onclick="fitAll(); closeAllMenus()">全体表示</button>
+      </div>
+    </div>
+
+    <div class="menuItem">
+      <button class="menuButton" onclick="checkGraph()">チェック</button>
+    </div>
+
+    <div class="menuItem">
+      <button class="menuButton" onclick="previewJson()">プレビュー</button>
+    </div>
+
+    <div class="menuItem">
+      <label for="modelNameInput">model:</label>
+      <input id="modelNameInput" type="text" placeholder="モデル名を入力">
+    </div>
+    <div class="menuItem">
+      <label for="nodeLabelModeSelect">node LB:</label>
+      <select id="nodeLabelModeSelect" onchange="updateNodeLabels(this.value)">
+        <option value="default">default</option>
+        <option value="impl_name">実装名</option>
+      </select>
+    </div>
+
+    <div class="menuItem">
+      <label for="labelModeSelect">edge LB:</label>
+      <select id="labelModeSelect" onchange="updateEdgeLabels(this.value)">
+        <option value="default">default</option>
+        <option value="type">type</option>
+        <option value="impl_name">実装名</option>
+      </select>
+    </div>
+
+  </div>
+
+  <input type="file" id="modelFileInput" style="display:none" accept=".txt" />
+  <input type="file" id="fileInput" accept=".json" style="display:none;">
+  <input type="file" id="importBusinessFields" style="display:none" />
+  <input type="file" id="saveJaonSchema" style="display:none" />
+
+  <!-- トップメニュー ここまで -->
+
+  <div id="cy"></div>
+
+  <!--モデルデータインポートエラー表示用 -->
+<div id="importErrorContainer" style="
+  display:none;
+  position:fixed;
+  top:80px;
+  left:20px;
+  z-index:1000;
+  border:1px solid #f00;
+  padding:10px;
+  background:#fee;
+  max-width:400px;
+  font-size:14px;
+">
+  <h3>インポートエラー</h3>
+  <ul id="importErrorList"></ul>
+</div>
+
+  <!-- ノード属性編集用 -->
+  <div id="fieldEditor" style="display:none; position:fixed; right:20px; top:80px; background:#fff; border:1px solid #ccc; padding:10px;">
+  <h3>属性追加</h3>
+  <div id="currentNodeInfo" style="margin-bottom:10px; font-size:14px; color:#333;">
+  <div>ノード名: <strong id="nodeLabelText"></strong></div>
+  <div>実装名: <strong id="nodeImplText"></strong></div>
+  <div>制度的属性: <strong id="nodeGenericText"></strong></div>
+  </div>
+  <label>実装名 <input id="attrName" type="text"></label><br>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+    <label for="attrType" style="flex-shrink:0;">型</label>
+    <div style="display:flex; gap:4px;">
+      <input id="attrType" type="text" placeholder="型を入力" style="width:120px;" />
+      <button type="button" onclick="openTypeSelector('attrType')" style="padding:2px 6px;">...</button>
+    </div>
+  </div>
+
+  <label>論理名 <input id="attrDesc" type="text"></label><br>
+  <label><input id="attrRequired" type="checkbox"> 必須</label><br>
+  <label><input id="attrDiscriminator" type="checkbox"> discriminator</label><br>
+  <label><input id="attrIdentifier" type="checkbox"> identifier</label><br>
+  <button id="addAttr">追加</button>
+  <button id="closeEditor">✖ 閉じる</button>
+  <div id="attrList"></div>
+  </div>
+
+  <!-- ノード追加 -->
+  <div id="nodeDialog" style="display:none; position:fixed; left:20px; top:80px; background:#fff; border:1px solid #ccc; padding:10px;">
+  <h3>ノード追加</h3>
+  <label> 名前 <input id="nodeName" type="text"></label><br>
+  <label>
+  <input type="checkbox" id="isGenericType">
+  汎用型として定義する（isGenericType）
+  </label><br>
+  <button onclick="createNode()">作成</button>
+  <button onclick="closeNodeDialog()">閉じる</button>
+  </div>
+
+  <!-- エッジ追加 -->
+  <div id="edgeDialog" style="display:none; position:fixed; left:20px; top:200px; background:#fff; border:1px solid #ccc; padding:10px;">
+    <h3>エッジ追加</h3>
+
+    <label>Source:
+      <select id="edgeSource"></select>
+    </label><br>
+
+    <label>Target:
+      <select id="edgeTarget"></select>
+    </label><br>
+
+    <label>Type:
+      <select id="edgeType">
+        <option value="include">include</option>
+        <option value="ref">ref</option>
+        <option value="subtype">subtype</option>
+      </select>
+    </label><br>
+
+    <label>Cardinality:
+      <select id="edgeCardinality">
+        <option value="1:1">1:1</option>
+        <option value="1:N">1:N</option>
+      </select>
+    </label><br>
+
+    <label>関係の論理名 (rel_name):
+      <input type="text" id="edgeRelName" placeholder="関係の論理名を入力" style="width: 80%;">
+    </label><br>
+
+    <button onclick="createEdge()">作成</button>
+    <button onclick="closeEdgeDialog()">閉じる</button>
+  </div>
+  
+  <!-- 実装名一覧設定（ノード） -->
+  <div id="implEditor" style="position:fixed; left:20px; top:100px; background:#f4f4f4; border:1px solid #ccc; padding:15px;">
+    <h3>impl_name 一覧編集</h3>
+    <input type="text" placeholder="論理名で検索…" oninput="filterNodes(this.value)">
+    <table id="implTable" border="1" cellpadding="4">
+      <tr><th>論理名（label）</th><th>実装名（impl_name）</th><th>提案</th></tr>
+    </table>
+    <button onclick="saveImplNames()">保存</button>
+    <button onclick="closeImplEditor()">閉じる</button>
+  </div>
+  
+  <!-- エッジ名、実装名設定-->
+  <div id="edgeEditPanel" style="display: none;">
+    <h3>エッジ編集</h3>
+    <!-- 表示専用: Source / Target / Type -->
+    <p>接続元: <span id="edgeSourceName"></span></p>
+    <p>接続先: <span id="edgeTargetName"></span></p>
+    <p>タイプ: <span id="edgeTypeName"></span></p>
+
+    <!-- include → ref 変換機能 -->
+    <div id="conversionSection" style="display: none;">
+      <hr>
+      <label>関係変換:</label><br>
+      <button onclick="convertIncludeToRef()">ref に変換する</button>
+      <button onclick="convertRefToInclude()">include に変換する</button><br><br>
+
+      <div id="conversionNotice" style="color: #3366cc; font-size: 0.9em;"></div>
+    </div>
+    <hr>
+    <p>
+    関係の論理名: <input type="text" id="edgeRelNameInput" placeholder="関係の論理名を入力" style="width: 80%;">
+    </p>
+    <label>表示名（label）:</label><br>
+    <input type="text" id="edgeLabelInput"><br><br>
+    <label>データ型（impl_type）:</label><br>
+    <div style="display:flex; gap:4px; align-items:center; margin-bottom:8px;">
+      <input type="text" id="edgeImplTypeInput" style="width:120px;" />
+      <button type="button" id="edgeImplTypeSelect" onclick="openTypeSelector('edgeImplTypeInput',true)" style="padding:2px 6px;">...</button>
+    </div>
+
+    <label id="edgeImplLabel">実装名（impl_name）:</label>
+    <input type="text" id="edgeImplInput"><br>
+
+    <div id="projectionFieldsSection" style="margin-top:12px; display:none;">
+      <label>参照フィールド（projection_fields）:</label><br>
+      <div id="projectionFieldsList" style="margin-left:8px;">
+        <!-- 動的にフィールド一覧を追加 -->
+      </div>
+    </div>
+
+    <label><input type="checkbox" id="edgeRequiredCheckbox" /> 必須 (required)</label><br>
+    <hr>
+    <button onclick="saveEdgeProperties()">保存</button>
+    <button id="closeEdgeEdit" onclick="closeEdgeEdit()">閉じる</button>
+  </div>
+
+  <!-- ダイアログ追加（ノードおよびエッジ。データ型選択用）-->
+  <div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.3); z-index:9999;"></div>
+  <div id="typeModal" style="display:none; position:fixed; top:30%; left:50%; transform:translateX(-50%);
+  background:#fff; border:1px solid #ccc; padding:10px; z-index:10000; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+  <h4>型を選択してください</h4>
+  <div id="typeOptions" style="display:flex; flex-wrap:wrap; gap:8px;">
+    <!-- ボタンはJSで生成 -->
+  </div>
+  <button onclick="closeTypeModal()">閉じる</button>
+  </div>
+
+  <!-- プレビューダイアログ -->
+  <div id="previewDialog" class="dialog">
+  <pre id="previewContent"></pre>
+  <button onclick="closePreviewDialog()">閉じる</button>
+  <button onclick="copyPreviewJson()">コピー</button>
+  </div>
+
+<script>
+
+function toggleMenu(menuId) {
+  const menu = document.getElementById(menuId);
+  const isVisible = menu.style.display === "block";
+  document.querySelectorAll(".menuDropdown").forEach(m => m.style.display = "none");
+  if (!isVisible) menu.style.display = "block";
+}
+
+function closeAllMenus() {
+  document.querySelectorAll(".menuDropdown").forEach(menu => {
+    menu.style.display = "none";
+  });
+}
+
+let currentModelName = "モデル名"; // 初期値（空でもOK）
+
+function newModel(){
+  const confirmed = window.confirm("現在のモデルを破棄しますか？");
+  if (confirmed) {
+    location.reload(); // ページをリロードして初期状態に戻す
+  }
+  closeAllDialogs();
+}
+
+//モデルデータインポート機能用
+function importNGraphScript(){
+
+}
+document.getElementById('importModelBtn').addEventListener('click', () => {
+  document.getElementById('modelFileInput').click();
+  closeAllMenus();
+});
+
+// 画面のどこかをクリックしたらメニューが閉じる」
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".menuBar")) {
+    closeAllMenus();
+  }
+});
+
+// Graphスクリプトファイル読み込み処理
+document.getElementById('modelFileInput').addEventListener('change', (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // 🔽 ファイル名からモデル名を抽出して反映
+  const baseName = file.name.replace(/\.[^/.]+$/, ""); // 拡張子除去 → "graph-script-sudoku"
+  const modelName = baseName.replace(/^graph-script-/, ""); // プレフィックス除去 → "sudoku"
+  const modelNameInput = document.getElementById("modelNameInput");
+  if (modelNameInput) {
+    modelNameInput.value = modelName;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const errors = parseModelText(text);
+    
+    if (errors.length > 0) {
+      showImportErrors(errors); // GUIに表示
+      return;
+    }
+
+    const { nodes, edges } = parseModelTxtWithStyle(text);
+    if (cy_model) {
+      cy_model.off('tap');
+      cy_model.off('click');
+      cy_model.off('mouseover');
+      cy_model.destroy();
+      cy_model = null;
+    }
+
+    cy_model = cytoscape({
+      container: document.getElementById('cy'),
+      elements: [...nodes, ...edges],
+      style: model_st,
+      layout: { name: 'dagre' },
+      wheelSensitivity: 0.2
+    });
+
+    // イベントハンドリング
+    bindNodeEvents(cy_model);
+    bindEdgeEvents(cy_model);
+    setupClickPositionTracking();
+    cy_model.elements().unselect();
+
+    // 現在のラベル表示モードで一括設定
+    graphLabelUpdate();
+    graphNodeLabelUpdate();
+
+  };
+  reader.readAsText(file);
+  
+  // 🔁 同じファイルでも再選択できるようにする
+  event.target.value = '';
+
+  // ダイアログを非表示にする
+  closeAllDialogs();
+
+});
+
+// 表示ロジック ここから
+function showAllNodes() {
+  cy_model.nodes().forEach(n => n.style('display', 'element'));
+}
+
+function showOnlyNonGeneric() {
+  cy_model.nodes().forEach(n => {
+    const isGeneric = n.data('isGenericType') === true;
+    n.style('display', isGeneric ? 'none' : 'element');
+  });
+}
+
+function showOnlyGeneric() {
+  cy_model.nodes().forEach(n => {
+    const isGeneric = n.data('isGenericType') === true;
+    n.style('display', isGeneric ? 'element' : 'none');
+  });
+}
+
+function fitAll() {
+  cy_model.fit(cy_model.nodes(':visible'), 50); // 余白50px
+}
+// 表示ロジック ここまで
+
+function parseModelTxtWithStyle(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  const nodes = new Set();
+  const edges = [];
+
+  lines.forEach(line => {
+    if (line.startsWith('#') || line.startsWith('//') || line === '') return;
+
+    // 関係式のパターン
+    const relationMatch = line.match(
+      /^\[(.+?)\]\s*(->|->>|<-|<<-)\s*\[(.+?)\](?:\s*:\s*(\w+))?(?:\s*\((.+?)\))?$/
+    );
+
+    if (relationMatch) {
+      const [, left, arrow, right, explicitType, relName] = relationMatch;
+      let source, target, type = explicitType?.trim() || 'link';
+      let cardinality;
+
+      switch (arrow) {
+        case '->>': source = left; target = right; cardinality = 'oneToMany'; break;
+        case '<<-': source = right; target = left; cardinality = 'oneToMany'; break;
+        case '->':  source = left; target = right; cardinality = 'oneToOne';  break;
+        case '<-':  source = right; target = left; cardinality = 'oneToOne';  break;
+      }
+
+      source = source.trim();
+      target = target.trim();
+
+      nodes.add(source);
+      nodes.add(target);
+
+      const isSelfLoop = source === target;
+      let shape_type = type === 'subtype' ? type : `${cardinality}-${type}`;
+      if (isSelfLoop) shape_type += '-self';
+
+      edges.push({
+        data: {
+          source,
+          target,
+          type: shape_type,
+          rel_type: type,
+          rel_name: relName,
+          label: relName?.trim() || type
+        }
+      });
+
+      return;
+    }
+
+    // 単項式のパターン
+    const nodeMatch = line.match(/^\[(.+?)\]$/);
+    if (nodeMatch) {
+      const nodeName = nodeMatch[1].trim();
+      if (nodeName) nodes.add(nodeName);
+    }
+  });
+
+  let isGenericType = false;
+
+  return {
+    nodes: Array.from(nodes).map(id => ({ data: { id, label: id, isGenericType: isGenericType } })),
+    edges
+  };
+}
+
+function parseModelText(text) {
+  const lines = text.split('\n');
+  const errors = [];
+
+  lines.forEach((line, index) => {
+    const lineNumber = index + 1;
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('#') || trimmed === '') return;
+
+    // 関係式のパターン
+
+    // 式2・式3対応の関係式パターン（rel_name付きも許容）
+    const relationMatch = trimmed.match(
+      /^\[(.+?)\]\s*(->|->>|<-|<<-)\s*\[(.+?)\](?:\s*:\s*(\w+))?(?:\s*\((.+?)\))?$/
+    );
+
+    if (relationMatch) {
+      // 関係式として有効なのでエラーなし
+      return;
+    }
+
+    // 式1対応の単項式のパターン
+    const nodeMatch = trimmed.match(/^\[(.+?)\]$/);
+    if (nodeMatch) {
+      // 単項式として有効なのでエラーなし
+      return;
+    }
+
+    // どちらにもマッチしない場合は構文エラー
+    errors.push({
+      line: lineNumber,
+      error: '構文エラー',
+      reason: '行の形式が正しくありません。例: [A] -> [B]:type または [ノード名]'
+    });
+  });
+
+  return errors;
+}
+
+function showImportErrors(errors) {
+  closeAllDialogs();
+  console.log("showImportErrors called!!");
+  console.log(errors);
+  const container = document.getElementById('importErrorContainer');
+  const list = document.getElementById('importErrorList');
+
+  // 初期化
+  list.innerHTML = '';
+  container.style.display = 'block';
+
+  errors.forEach(err => {
+    const item = document.createElement('li');
+    item.textContent = `${err.line}行目: ${err.error} - ${err.reason}`;
+    list.appendChild(item);
+  });
+}
+
+// id自動生成
+function generateUniqueId(prefix = '') {
+  return prefix + Math.random().toString(36).substr(2, 9);
+}
+
+function resetAttrDialog() {
+  // ボタンラベルを「追加」に戻す
+  document.getElementById('addAttr').textContent = '追加';
+  editingAttrIndex = null;
+}
+
+let selectedNode;
+
+// Nodeイベントの設定機能
+function bindNodeEvents(cy) {
+  cy.on('tap', 'node', evt => {
+    closeNodeDialog();
+    resetAttrDialog();//リセット処理追加
+    const node = evt.target;
+    selectedNode = node;
+    selectedEdge = null;//選択エッジを解放
+    document.getElementById('fieldEditor').style.display = 'block';
+    openFieldEditor(node);
+    updateAttrList(node.data().fields || []);
+  });
+}
+
+// Edgeイベントの設定機能
+function bindEdgeEvents(cy) {
+  cy.on('tap', 'edge', function(evt){
+    const edge = evt.target;
+    selectedEdge = edge;
+    selectedNode = null;//選択ノードを解放
+
+    console.log("Edge Click!!");
+    closeAllDialogs();
+
+    const sourceId = selectedEdge.data("source");
+    const targetId = selectedEdge.data("target");
+    const typeName = selectedEdge.data("type");
+
+    document.getElementById("edgeSourceName").textContent  = sourceId || "";
+    document.getElementById("edgeTargetName").textContent  = targetId || "";
+    document.getElementById("edgeTypeName").textContent  = typeName || "";
+
+    document.getElementById('edgeRelNameInput').value = edge.data("rel_name") || "";
+    document.getElementById("edgeLabelInput").value = edge.data("label") || "";
+    document.getElementById("edgeImplInput").value = edge.data("impl_name") || "";
+    document.getElementById("edgeImplTypeInput").value = edge.data("impl_type") || "";
+
+    const isSubtype = edge.data("type") === "subtype";
+    document.getElementById("edgeRelNameInput").disabled = isSubtype;
+    document.getElementById("edgeLabelInput").disabled = isSubtype;
+    document.getElementById("edgeImplInput").disabled = isSubtype;
+    document.getElementById("edgeImplTypeInput").disabled = isSubtype;
+    document.getElementById("edgeImplTypeSelect").disabled = isSubtype;
+    document.getElementById("edgeRequiredCheckbox").disabled = isSubtype;
+
+    const edgeReqired = edge.data("required") || false;
+    document.getElementById("edgeRequiredCheckbox").checked = edgeReqired;
+
+    // conversionSection の表示制御
+    if (edge.data("type") === "oneToOne-include" || edge.data("type") === "oneToMany-include" || edge.data("org_type")) {
+      document.getElementById("conversionSection").style.display = "block";
+      document.getElementById("conversionNotice").textContent = "";
+    } else {
+      document.getElementById("conversionSection").style.display = "none";
+    }
+
+    // ✅ 共通関数で projection_fields を更新
+    const implType = edge.data("impl_type") || "";
+    const match = implType.match(/^(array|object|\*object)<(.+)>$/);
+    const targetName = match?.[2];
+    const targetNode = cy_model.nodes().find(n => n.data("impl_name") === targetName);
+
+    updateProjectionFieldsList(implType, targetNode, cy_model, edge);
+
+    // ✅ *object<> の場合は impl_name 非表示＋ required 無効化
+    const implInput = document.getElementById("edgeImplInput");
+    const implLabel = document.getElementById("edgeImplLabel");
+
+    const requiredCheckbox = document.getElementById("edgeRequiredCheckbox");
+
+    // まず通常の checked 状態を反映
+    const edgeRequired = edge.data("required") || false;
+    requiredCheckbox.checked = edgeRequired;
+
+    // implType による制御
+    if (implType.startsWith("*object<")) {
+      implInput.value = "";
+      implInput.style.display = "none";
+      implLabel.style.display = "none";
+      requiredCheckbox.checked = false;
+      requiredCheckbox.disabled = true;
+    } else {
+      implInput.style.display = "block";
+      implLabel.style.display = "block";
+      requiredCheckbox.disabled = false;
+    }
+
+    // subtype の場合は最優先で無効化
+    if (isSubtype) {
+      requiredCheckbox.checked = false;
+      requiredCheckbox.disabled = true;
+    }
+
+    document.getElementById("edgeEditPanel").style.display = "block";
+  });
+}
+let cy_model;
+let model_st = [
+  // 共通スタイル
+  {
+    selector: 'node',
+    style: {
+      'shape': 'rectangle',
+      'width': 'label',
+      'height': 'label',
+      'padding': '10px',
+      // 'background-color': '#555',  // 通常ノード：既存の濃灰色
+      'label': 'data(label)',
+      'color': '#fff',
+      'font-size': '10px',
+      'text-valign': 'center',
+      'text-halign': 'center'
+    }
+  },
+  {
+    selector: 'node[isGenericType]',
+    style: {
+      'background-color': '#88c'
+    }
+  },
+  {
+    selector: 'node[!isGenericType]',
+    style: {
+      'background-color': '#555'
+    }
+  },
+
+
+  // 汎用エッジスタイル（ref）
+  {
+    selector: 'edge[type = "oneToMany-ref"]',
+    style: {
+      'curve-style': 'bezier',
+      'font-size': '8px',
+      'text-background-color': '#f4f4f4',
+      'text-background-opacity': 1,
+      'text-background-padding': 2,
+      'line-style': 'dashed',
+      'line-color': '#666',
+      'target-arrow-shape': 'triangle',
+      'target-arrow-color': '#666'
+    }
+  },
+  {
+    selector: 'edge[type = "oneToOne-ref"]',
+    style: {
+      'curve-style': 'bezier',
+      'font-size': '8px',
+      'text-background-color': '#f4f4f4',
+      'text-background-opacity': 1,
+      'text-background-padding': 2,
+      'line-style': 'dashed',
+      'line-color': '#666',
+      'target-arrow-shape': 'chevron',
+      'target-arrow-color': '#666'
+    }
+  },
+  // 汎用エッジスタイル（include）
+  {
+    selector: 'edge[type = "oneToMany-include"]',
+    style: {
+      'curve-style': 'bezier',
+      'font-size': '8px',
+      'text-background-color': '#f4f4f4',
+      'text-background-opacity': 1,
+      'text-background-padding': 2,
+      'line-style': 'solid',
+      'line-color': '#007acc',
+      'target-arrow-shape': 'triangle',
+      'target-arrow-color': '#666'
+    }
+  },
+  {
+    selector: 'edge[type = "oneToOne-include"]',
+    style: {
+      'curve-style': 'bezier',
+      'font-size': '8px',
+      'text-background-color': '#f4f4f4',
+      'text-background-opacity': 1,
+      'text-background-padding': 2,
+      'line-style': 'solid',
+      'line-color': '#007acc',
+      'target-arrow-shape': 'chevron',
+      'target-arrow-color': '#666'
+    }
+  },
+  // 汎用エッジスタイル（link）
+  {
+    selector: 'edge[type = "oneToMany-link"]',
+    style: {
+      'curve-style': 'bezier',
+      'font-size': '8px',
+      'text-background-color': '#f4f4f4',
+      'text-background-opacity': 1,
+      'text-background-padding': 2,
+      'line-style': 'solid',
+      'line-color': '#666',
+      'target-arrow-shape': 'triangle',
+      'target-arrow-color': '#666'
+    }
+  },
+  {
+    selector: 'edge[type = "oneToOne-link"]',
+    style: {
+      'curve-style': 'bezier',
+      'font-size': '8px',
+      'text-background-color': '#f4f4f4',
+      'text-background-opacity': 1,
+      'text-background-padding': 2,
+      'line-style': 'solid',
+      'line-color': '#666',
+      'target-arrow-shape': 'chevron',
+      'target-arrow-color': '#666'
+    }
+  },
+  // 汎用エッジスタイル（ref-self）
+  {
+    selector: 'edge[type = "oneToMany-ref-self"]',
+    style: {
+      'curve-style': 'bezier',
+      'loop-direction': 'right',
+      'loop-sweep': 100,
+      'line-style': 'dashed',
+      'line-color': '#666',
+      'target-arrow-shape': 'triangle',
+      'target-arrow-color': '#666',
+      'font-size': '8px'
+    }
+  },
+  {
+    selector: 'edge[type = "oneToOne-ref-self"]',
+    style: {
+      'curve-style': 'bezier',
+      'loop-direction': 'right',
+      'loop-sweep': 100,
+      'line-style': 'dashed',
+      'line-color': '#666',
+      'target-arrow-shape': 'chevron',
+      'target-arrow-color': '#666',
+      'font-size': '8px'
+    }
+  },
+  {
+      // 汎用エッジスタイル（基本ラベルと配置のみ）
+      selector: 'edge',
+      style: {
+        'curve-style': 'bezier',
+        'label': 'data(label)',
+        'font-size': '8px',
+        'text-background-color': '#f4f4f4',
+        'text-background-opacity': 1,
+        'text-background-padding': 2
+      }
+  },
+  {
+      // subtype（派生） → 緑色・細め・triangle-backcurve（または triangle）
+      selector: 'edge[type = "subtype"]',
+      style: {
+        'line-style': 'solid',
+        'line-color': '#2e7d32',
+        'target-arrow-color': '#2e7d32',
+        'target-arrow-shape': 'triangle-backcurve',
+        'width': 2
+      }
+  },
+  {
+    selector: 'node:selected',
+    style: {
+      'border-width': 3,
+      'border-color': '#f39c12',
+      // 'background-color': '#666'
+    }
+  },
+  {
+    selector: 'edge:selected',
+    style: {
+      'line-color': '#f39c12',
+      'target-arrow-color': '#f39c12',
+      'width': 3
+    }
+  }
+];
+
+let data = {
+    "nodes": [],
+    "edges": []
+};
+const cy = cytoscape({
+  container: document.getElementById('cy'),
+  elements: data,
+  style: model_st,
+  layout: {
+    name: 'dagre',
+    rankDir: 'LR',
+    nodeSep: 60,
+    edgeSep: 30,
+    rankSep: 100
+  },
+  wheelSensitivity: 0.2 //0.5 //1.0 // ← これがズーム感度
+});
+
+cy_model = cy;
+
+cy_model.on('tap', 'node, edge', function(evt) {
+  cy_model.elements().unselect(); // 他の選択解除
+  lastClickPosition = { x: evt.x, y: evt.y };
+  evt.target.select();            // この要素だけ選択
+});
+
+bindNodeEvents(cy_model);
+bindEdgeEvents(cy_model);
+
+// 保存ボタン機能
+function generateFilename(formatName, modelName) {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  return `${formatName}-${modelName}-${yyyy}${mm}${dd}-${hh}${min}.json`;
+}
+
+// JSON graph 保存
+document.getElementById('save').addEventListener('click', async () => {
+  try {
+    const input = document.getElementById('modelNameInput');
+    if (input && input.value.trim()) {
+      currentModelName = input.value.trim(); // モデル名を保持
+    }
+
+    const suggestedName = generateFilename('json-graph', currentModelName);
+    const fileHandle = await window.showSaveFilePicker({
+      suggestedName: suggestedName, //'cy-positioned.json',
+      types: [{
+        description: 'json file',
+        accept: { 'application/json': ['.json'] }
+      }]
+    });
+
+    const json = cy_model.elements().jsons();
+    const writable = await fileHandle.createWritable();
+    const content = JSON.stringify(json, null, 2);// 'ここに保存したいテキストを入れる'; // ← 実際のデータに置き換えてください
+    await writable.write(content);
+    await writable.close();
+    console.log('保存完了:', fileHandle.name);
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      console.error('保存エラー:', err);
+    }
+  }
+  closeAllMenus();
+});
+
+//以下属性設定ダイアログ用
+
+// ダイアログクローズ処理 -- start 
+const dialogIds = [
+  'importErrorContainer',
+  'fieldEditor',
+  'nodeDialog',
+  'edgeDialog',
+  'implEditor',
+  'edgeEditPanel',
+  'conversionSection',
+  'conversionNotice',
+  'typeModal',
+  'modalOverlay',
+  'previewDialog'
+];
+
+function closeAllDialogs() {
+  closeAllMenus(); //ダイアログを閉じるときにサブメニューもすべて閉じる
+  dialogIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+// ダイアログクローズ処理 -- end 
+
+function updateAttrList(fields) {
+const list = document.getElementById('attrList');
+list.innerHTML = '<ul>' + fields.map((f, i) =>
+`<li>
+  <strong>${f.name}</strong> (${f.type}) ${f.required ? '[必須]' : ''} ${f.discriminator ? '[D]' : ''}  ${f.identifier ? '[I]' : ''}
+  ${f.desc ? `<div style="font-size:10px;color:#666;">説明: ${f.desc}</div>` : ''}
+  <button onclick="moveAttr(${i}, -1)">▲</button>
+  <button onclick="moveAttr(${i}, 1)">▼</button>
+  <button onclick="editAttr(${i})">✏ 編集</button>
+  <button onclick="removeAttr(${i})">🗑 削除</button>
+</li>`
+).join('') + '</ul>';
+}
+
+function removeAttr(index) {
+	const nodeData = selectedNode.data();
+	nodeData.fields.splice(index, 1);
+	updateAttrList(nodeData.fields);
+}
+
+let editingIndex = null;
+
+function editAttr(index) {
+	const field = selectedNode.data().fields[index];
+	document.getElementById('attrName').value = field.name;
+	document.getElementById('attrType').value = field.type;
+	document.getElementById('attrDesc').value = field.desc || '';
+	document.getElementById('attrRequired').checked = field.required || false;
+  document.getElementById('attrDiscriminator').checked = field.discriminator || false;
+  document.getElementById('attrIdentifier').checked = field.identifier || false;
+	editingIndex = index;
+
+	document.getElementById('addAttr').textContent = '保存';
+}
+
+document.getElementById('closeEditor').addEventListener('click', () => {
+	document.getElementById('fieldEditor').style.display = 'none';
+	});
+
+function moveAttr(index, direction) {
+	const fields = selectedNode.data().fields || [];
+	const newIndex = index + direction;
+
+	if (newIndex < 0 || newIndex >= fields.length) return; // 範囲外は無視
+
+	// 入れ替え（シンプルな配列swap）
+	[fields[index], fields[newIndex]] = [fields[newIndex], fields[index]];
+
+	updateAttrList(fields);
+}
+
+document.getElementById('addAttr').addEventListener('click', () => {
+	const name = document.getElementById('attrName').value.trim();
+	let type = document.getElementById('attrType').value.trim();
+	const desc = document.getElementById('attrDesc').value.trim();
+	let required = document.getElementById('attrRequired').checked;
+  const discriminator = document.getElementById('attrDiscriminator')?.checked;
+  const identifier = document.getElementById('attrIdentifier')?.checked;
+
+	if (!name || !type) return;
+
+  if (discriminator){ //ここに処理を書く
+    if (type !== 'string') {
+      const ok = window.confirm(
+        'discriminator は string 型で指定する必要があります。\n型を string に変更して続行しますか？'
+      );
+
+      if (ok) {
+        // 型を string に強制変更
+        document.getElementById('attrType').value = 'string';
+        type = 'string';
+      } else {
+        // チェックを元に戻して処理中断
+        document.getElementById('attrDiscriminator').checked = false;
+        return;
+      }
+    }
+  }
+  // discriminatorが設定されている場合は、必須(required)とする。2025-11-20
+  if (discriminator) {
+    required = true;
+    document.getElementById('attrRequired').checked = true;
+  }
+
+  const field = {
+    name,
+    type,
+    desc,
+    required,
+    discriminator,
+    identifier
+  };
+
+	const fields = selectedNode.data().fields || [];
+
+	if (editingIndex !== null) {
+	  fields[editingIndex] = field; // 編集更新
+	  editingIndex = null;
+	  document.getElementById('addAttr').textContent = '追加';
+	} else {
+	  fields.push(field); // 新規追加
+	}
+
+	selectedNode.data().fields = fields;
+	updateAttrList(fields);
+});
+
+// ノード新規追加
+function openNodeDialog() {
+  closeAllDialogs();
+	document.getElementById('nodeDialog').style.display = 'block';
+}
+
+function closeNodeDialog() {
+	document.getElementById('nodeDialog').style.display = 'none';
+}
+
+let lastClickPosition = { x: 100, y: 100 };
+setupClickPositionTracking();
+
+// 画面クリック位置を保存するハンドラ
+function setupClickPositionTracking() {
+  cy_model.on('tap', function(event) {
+    if (event.target === cy_model || event.target.group === undefined) {
+      lastClickPosition = event.position;
+      console.log("tap !!!");
+      console.log(lastClickPosition);
+    }
+  });
+}
+
+function createNodeAuto(name, isGenericType) {
+
+  if (cy_model.getElementById(name).length > 0) {
+    alert(`ノード「${name}」はすでに存在します`);
+    return;
+  }
+
+  let node = {
+	  group: 'nodes',
+	  data: {
+      id: name,
+		  label: name,
+		  fields: [],
+      isGenericType: isGenericType
+	  },
+    position: lastClickPosition
+  };
+
+  lastClickPosition = { x: lastClickPosition.x + 1, y: lastClickPosition.y + 1 };
+  
+  cy_model.add(node);
+
+}
+
+function createNode() {
+
+	const name = document.getElementById('nodeName').value.trim();
+	if (!name) return;
+  const isGenericType = document.getElementById('isGenericType').checked;
+
+	createNodeAuto(name, isGenericType);
+
+	closeNodeDialog();
+}
+
+function filterNodes(query) {
+query = query.trim().toLowerCase();
+
+const rows = document.querySelectorAll('#implTable tr');
+rows.forEach((row, index) => {
+  // ヘッダー行は常に表示
+  if (index === 0) {
+	row.style.display = '';
+	return;
+  }
+
+  const label = row.cells[0].textContent.toLowerCase();
+  const impl = row.cells[1].querySelector('input')?.value.toLowerCase();
+
+  if (label.includes(query) || impl.includes(query)) {
+	  row.style.display = '';
+  } else {
+	  row.style.display = 'none';
+  }
+});
+}
+
+function openFieldEditor(node) {
+  closeAllDialogs();
+	document.getElementById("fieldEditor").style.display = "block";
+	document.getElementById("nodeLabelText").textContent = node.data("label") || "(未設定)";
+	document.getElementById("nodeImplText").textContent = node.data("impl_name") || "(未設定)";
+  const isGenericType = node.data('isGenericType');
+  document.getElementById('nodeGenericText').textContent = isGenericType ? 'true' : 'false';
+
+}
+
+// 読み込みボタンが押されたらファイル選択ダイアログ表示
+document.getElementById('load').addEventListener('click', () => {
+	document.getElementById('fileInput').click();
+  closeAllMenus();
+	});
+
+// ファイル名からモデル名を抽出する
+function extractModelName(file) {
+  const name = typeof file === 'string' ? file : file.name;
+  const match = name.match(/^json-graph-(.+?)-\d{8}-\d{4}\.json$/);
+  return match ? match[1] : '';
+}
+
+// ファイルが選ばれたら JSON 読み込みしてグラフ再表示
+document.getElementById('fileInput').addEventListener('change', event => {
+  const file = event.target.files[0];
+  if (!file) return;
+  // モデル名欄に設定
+  const model_name = extractModelName(file);
+  document.getElementById('modelNameInput').value = model_name;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const json = JSON.parse(e.target.result);
+      if (cy_model) {
+        cy_model.off('tap');         // 全ノード・エッジに対する tap イベントを解除
+        cy_model.off('click');       // click イベントを解除
+        cy_model.off('mouseover');   // 必要に応じて他のイベントも
+
+        cy_model.destroy();
+        cy_model = null;
+      }
+
+      cy_model = cytoscape({
+        container: document.getElementById('cy'),
+        elements: json,
+        style: model_st, // 既存スタイル配列
+        layout: { name: 'preset' }, // ← 保存された位置で表示！
+        wheelSensitivity: 0.2 //0.5 //1.0 // ← これがズーム感度
+      });
+      bindNodeEvents(cy_model);
+      bindEdgeEvents(cy_model);
+      setupClickPositionTracking();
+      cy_model.elements().unselect();
+
+    } catch (err) {
+      console.error('❌ JSON読み込みエラー:', err);
+      alert('JSONファイルの読み込みに失敗しました');
+    }
+  };
+  reader.readAsText(file);
+
+  // 🔁 同じファイルでも再選択できるようにする
+  event.target.value = '';
+
+  // ダイアログを非表示にする
+  closeAllDialogs();
+});
+
+// ESCキーで選択解除する操作も追加可能
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    clearSelection();
+  }
+});
+
+//エッジ追加
+function openEdgeDialog() {
+  closeAllDialogs();
+  const sourceSelect = document.getElementById('edgeSource');
+  const targetSelect = document.getElementById('edgeTarget');
+  const nodes = cy_model.nodes();
+
+  sourceSelect.innerHTML = '';
+  targetSelect.innerHTML = '';
+
+  nodes.forEach(n => {
+    const id = n.id();
+    const label = n.data('label') || id;
+    const isGeneric = n.data('isGenericType') === true;
+    const displayLabel = isGeneric ? `[type] ${label}` : label;
+
+    const optionSource = document.createElement('option');
+    optionSource.value = id;
+    optionSource.textContent = displayLabel;
+    optionSource.className = isGeneric ? 'generic' : 'non-generic';
+    sourceSelect.appendChild(optionSource);
+
+    const optionTarget = document.createElement('option');
+    optionTarget.value = id;
+    optionTarget.textContent = displayLabel;
+    optionTarget.className = isGeneric ? 'generic' : 'non-generic';
+    targetSelect.appendChild(optionTarget);
+  });
+
+  document.getElementById('edgeDialog').style.display = 'block';
+}
+
+function closeEdgeDialog() {
+  document.getElementById('edgeDialog').style.display = 'none';
+}
+
+function createEdge() {
+  const nodes = cy_model.nodes();
+  if (nodes.length < 2) {
+    alert("ノードが2つ以上存在していないため、エッジを作成できません。");
+    return;
+  }
+
+  const source = document.getElementById('edgeSource').value;
+  const target = document.getElementById('edgeTarget').value;
+
+  // 制度的整合性チェック
+  const sourceNode = cy_model.getElementById(source);
+  const targetNode = cy_model.getElementById(target);
+  const sourceGeneric = sourceNode.data('isGenericType') === true;
+  const targetGeneric = targetNode.data('isGenericType') === true;
+
+  if (sourceGeneric !== targetGeneric) {
+    alert("GenericTypeノードと実体ノードの接続はできません。");
+    return;
+  }
+
+  // 以下、既存の処理をそのまま続行
+  const type = document.getElementById('edgeType').value;
+  const cardinality = document.getElementById('edgeCardinality').value;
+  let relName = document.getElementById('edgeRelName').value.trim();
+
+  let shape_type = '';
+  if (type === 'subtype') {
+    shape_type = 'subtype';
+    relName = '';
+  } else {
+    shape_type = (cardinality === '1:N') ? 'oneToMany' : 'oneToOne';
+    shape_type = `${shape_type}-${type}`;
+  }
+
+  const isSelfLoop = source === target;
+  if (isSelfLoop) shape_type += '-self';
+
+  const autoId = generateUniqueId('edge-');
+  cy_model.add({
+    group: 'edges',
+    data: {
+      id: autoId,
+      source, target,
+      type: shape_type,
+      rel_type: type,
+      rel_name: relName,
+      label: type
+    }
+  });
+
+  graphLabelUpdate();
+  graphNodeLabelUpdate();
+  closeEdgeDialog();
+}
+
+// 削除機能
+function deleteSelected() {
+  const selected = cy_model.$(':selected');
+  if (selected.length === 0) {
+    alert("削除したいノードまたはエッジを選択してください");
+    return;
+  }
+  cy_model.remove(selected);
+}
+
+// 選択解除
+function clearSelection() {
+  selectedEdge = null;
+  cy_model.elements().unselect();
+}
+
+// エッジラベル表示設定取得
+let currentLabelMode = 'default';
+document.getElementById('labelModeSelect').addEventListener('change', function() {
+  currentLabelMode = this.value;
+  updateEdgeLabels(currentLabelMode);
+});
+
+function graphLabelUpdate(){
+  console.log("called graphLabelUpdate()")
+  updateEdgeLabels(currentLabelMode);
+}
+
+// ノードラベル表示設定取得
+let currentNodeLabelMode = 'default';
+document.getElementById('nodeLabelModeSelect').addEventListener('change', function() {
+  const edgeLabelSelect = document.getElementById("labelModeSelect"); // エッジのラベルコンボ
+
+  currentNodeLabelMode = this.value;
+  updateNodeLabels(currentNodeLabelMode);
+  
+  // GUI上のエッジドロップダウンも連動
+  edgeLabelSelect.value = this.value;
+  edgeLabelSelect.dispatchEvent(new Event("change"));// イベント発火
+
+});
+
+function graphNodeLabelUpdate(){
+  console.log("called graphNodeLabelUpdate()")
+  updateNodeLabels(currentNodeLabelMode);
+}
+
+
+//ノードラベル表示設定
+function updateNodeLabels(mode = 'default') {
+  cy_model.nodes().forEach(node => {
+    let label = '';
+    switch (mode) {
+      case 'default':
+        label = node.data('id');
+        break;
+      case 'impl_name':
+        label = node.data('impl_name')?.trim();
+        label = label ? label : '<undefined>';
+        break;
+
+    }
+
+    node.data('label', label);
+  });
+}
+
+//エッジラベル表示設定
+function updateEdgeLabels(mode = 'default') {
+  cy_model.edges().forEach(edge => {
+    let label = '';
+    if (edge.data('rel_type') === 'subtype') {
+      label = 'subtype';
+    } else {
+      switch (mode) {
+        case 'type':
+          label = edge.data('rel_type') || '';
+          break;
+        case 'impl_name':
+          label = edge.data('impl_name')?.trim();
+          label = label ? label : '<undefined>';
+          break;
+        case 'default':
+          label = edge.data('rel_name')?.trim() || edge.data('rel_type') || '';
+          break;
+      }
+    }
+
+    edge.data('label', label);
+  });
+}
+
+// 実装名設定
+function toSnakeCase(str) {
+  return str
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)) // 全角→半角
+    .replace(/[^\w\s]/g, '') // 記号除去
+    .replace(/\s+/g, '_')    // 空白 → _
+    .replace(/([A-Z])/g, '_$1')
+    .toLowerCase()
+    .replace(/^_+/, '');
+}
+
+function openImplEditor() {
+  closeAllDialogs();
+
+  const table = document.getElementById('implTable');
+  table.innerHTML = '<tr><th>論理名（label）</th><th>実装名（impl_name）</th></tr>';
+
+  cy_model.nodes().forEach(node => {
+    const label = node.data('label') || node.data('id');
+    const current = node.data('impl_name') || '';
+    const isGeneric = node.data('isGenericType') === true;
+    const displayLabel = isGeneric ? `[type] ${label}` : label;
+
+    const inputField = `<input value="${current}" data-id="${node.id()}" class="impl-input" placeholder="${isGeneric ? '型名' : '実装名'}">`;
+
+    const row = `<tr class="${isGeneric ? 'generic-row' : 'non-generic-row'}">
+      <td>${displayLabel}</td>
+      <td>${inputField}</td>
+    </tr>`;
+
+    table.innerHTML += row;
+  });
+
+  document.getElementById('implEditor').style.display = 'block';
+}
+
+// 型選択GUI(エッジ用)
+function updateReferenceFieldVisibility(dataType) {
+  const refField = document.getElementById("projectionFieldsSection");
+  if (!refField) return; // 要素が存在しない場合は何もしない
+
+  if (
+    dataType.startsWith("array<") ||
+    dataType.startsWith("object<") ||
+    dataType.startsWith("*object<")
+  ) {
+    refField.style.display = "block";
+  } else {
+    refField.style.display = "none";
+  }
+}
+
+function updateProjectionFieldsList(finalType, targetNode, cy_model, edge) {
+  const section = document.getElementById("projectionFieldsSection");
+  const list = document.getElementById("projectionFieldsList");
+  list.innerHTML = "";
+
+  if (!edge || !targetNode) {
+    section.style.display = "none";
+    return;
+  }
+  if (edge.data("rel_type") !== "ref") {
+    section.style.display = "none";
+    return;
+  }
+
+  if (edge.data("rel_type") !== "ref" || !targetNode) {
+    section.style.display = "none";
+    return;
+  }
+
+  let nativeFields = [];
+  let derivedFields = [];
+
+  // 1) targetNode の直接フィールド
+  (targetNode.data("fields") || []).forEach(f => {
+    nativeFields.push({ name: f.name, origin: "native" });
+  });
+
+  // 2) targetNode を source とするエッジ
+  const outgoingEdges = cy_model.edges().filter(e => e.data("source") === targetNode.data("id"));
+  outgoingEdges.forEach(e => {
+    const implTypeE = e.data("impl_type") || "";
+
+    if (implTypeE.startsWith("*object<")) {
+      const pf = e.data("projection_fields") || [];
+      pf.forEach(p => {
+        derivedFields.push({ name: p.as || p.from, origin: "*object" });
+      });
+    } else if (implTypeE.startsWith("object<") || implTypeE.startsWith("array<")) {
+      const implNameE = e.data("impl_name");
+      if (implNameE) {
+        derivedFields.push({ name: implNameE, origin: "object/array" });
+      }
+    }
+  });
+
+  const projectionFields = edge.data("projection_fields") || [];
+
+  // 3) UI 出力: native フィールド
+  if (nativeFields.length > 0) {
+    const header = document.createElement("div");
+    header.textContent = "🔹 Native フィールド";
+    header.style.fontWeight = "bold";
+    list.appendChild(header);
+
+    nativeFields.forEach(field => {
+      const existing = projectionFields.find(p => p.from === field.name);
+      const checked = existing ? "checked" : "";
+      const asValue = existing?.as || "";
+      const required = existing?.required || false;
+      const requiredChecked = required ? "checked" : "";
+
+      const div = document.createElement("div");
+      div.className = "projectionFieldItem";
+      div.innerHTML = `
+        <label><input type="checkbox" data-from="${field.name}" ${checked} /> ${field.name}</label>
+        → as: <input type="text" data-as="${field.name}" value="${asValue}" placeholder="例: 別名" />
+        必須: <input type="checkbox" data-required="${field.name}" ${requiredChecked} />
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  // 4) UI 出力: 派生フィールド
+  if (derivedFields.length > 0) {
+    const header = document.createElement("div");
+    header.textContent = "🔹 派生フィールド";
+    header.style.fontWeight = "bold";
+    list.appendChild(header);
+
+    derivedFields.forEach(field => {
+      const existing = projectionFields.find(p => p.from === field.name);
+      const checked = existing ? "checked" : "";
+      const asValue = existing?.as || "";
+      const required = existing?.required || false;
+      const requiredChecked = required ? "checked" : "";
+
+      const div = document.createElement("div");
+      div.className = "projectionFieldItem derived";
+      div.innerHTML = `
+        <label><input type="checkbox" data-from="${field.name}" ${checked} /> ${field.name} <span style="color:gray">(${field.origin})</span></label>
+        → as: <input type="text" data-as="${field.name}" value="${asValue}" placeholder="例: 別名" />
+        必須: <input type="checkbox" data-required="${field.name}" ${requiredChecked} />
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  section.style.display = "block";
+}
+
+// 型選択GUI(ノード・エッジ共通)
+function openTypeSelector(setElem, isEdge = false) {
+  const container = document.getElementById("typeOptions");
+  container.innerHTML = ""; // 初期化
+
+  const types = isEdge
+  ? ["string", "number", "integer", "boolean", "null", "object", "array<>", "object<>","*object<>"]
+  : ["string", "number", "integer", "boolean", "null", "object", "array<>", "object<>"];
+
+  const relType = selectedEdge?.data("rel_type");
+  if (relType === "subtype") {
+    // なにもしない
+    return;
+  }
+
+  let targetImplName = "";
+  let targetNode = null;
+  if (isEdge && selectedEdge) {
+    let edge = selectedEdge;
+    const targetId = edge.data("target");
+    targetNode = cy_model.nodes().find(n => n.data("id") === targetId);
+    targetImplName = targetNode?.data("impl_name") || "";
+  }
+
+  types.forEach(type => {
+    const btn = document.createElement("button");
+    btn.textContent = type;
+    btn.style.padding = "4px 8px";
+    
+    btn.onclick = () => {
+      let finalType = type;
+      if ((type === "array<>" || type === "object<>" || type === "*object<>") && targetImplName !== "") {
+        finalType = type.replace("<>", `<${targetImplName}>`);
+      }
+
+      document.getElementById(setElem).value = finalType;
+
+      // ✅ 共通ロジックで projection_fields を更新
+      updateReferenceFieldVisibility(finalType);
+      updateProjectionFieldsList(finalType, targetNode, cy_model, selectedEdge);
+
+      // impl_name 入力欄の制御
+      const implInput = document.getElementById("edgeImplInput");
+      const implLabel = document.getElementById("edgeImplLabel");
+      const requiredCheckbox = document.getElementById("edgeRequiredCheckbox");
+
+      if (isEdge && selectedEdge && finalType.startsWith("*object<")) {
+        selectedEdge.data("impl_name", "");
+        implInput.value = "";
+        implInput.style.display = "none";
+        implLabel.style.display = "none";
+
+        // ✅ 必須チェックを完全に無効化
+        requiredCheckbox.checked = false;
+        requiredCheckbox.disabled = true;
+      } else {
+        implInput.style.display = "block";
+        implLabel.style.display = "block";
+        requiredCheckbox.disabled = false;
+      }
+
+      closeTypeModal();
+    };
+    container.appendChild(btn);
+  });
+
+  document.getElementById("modalOverlay").style.display = "block";//モーダル背景
+  document.getElementById("typeModal").style.display = "block";
+}
+
+function closeTypeModal() {
+  document.getElementById("typeModal").style.display = "none";
+  document.getElementById("modalOverlay").style.display = "none";//モーダル背景
+}
+
+function applySuggestion(btn) {
+  const suggestion = btn.getAttribute('data-suggestion');
+  btn.parentElement.previousElementSibling.firstElementChild.value = suggestion;
+}
+
+function saveImplNames() {
+  const inputs = document.querySelectorAll('.impl-input');
+  inputs.forEach(input => {
+    const id = input.getAttribute('data-id');
+    const node = cy_model.getElementById(id);
+    node.data('impl_name', input.value.trim());
+  });
+
+  // 現在のラベル表示モードで一括設定
+  graphLabelUpdate();
+  graphNodeLabelUpdate();
+
+  alert("impl_name を保存しました！");
+  closeImplEditor();
+}
+
+function closeImplEditor() {
+  document.getElementById('implEditor').style.display = 'none';
+}
+
+//エッジ名設定
+let selectedEdge = null;
+
+function saveEdgeProperties() {
+  if (!selectedEdge) return;
+
+  const label = document.getElementById("edgeLabelInput").value;
+  const relName = document.getElementById('edgeRelNameInput').value.trim();
+  const implName = document.getElementById("edgeImplInput").value;
+  const implType = document.getElementById("edgeImplTypeInput").value;
+  const relType = selectedEdge.data("rel_type");
+
+  selectedEdge.data("label", label);
+  selectedEdge.data("rel_name", relName);
+  selectedEdge.data("impl_name", implName);
+  selectedEdge.data("impl_type", implType);
+
+  // ✅ 制度的属性の取得
+  const isRequired = document.getElementById("edgeRequiredCheckbox").checked;
+
+  // ✅ edge_id フィールドに反映
+  const isProjectionEdge = implType.startsWith("*object<");
+  if (isProjectionEdge) {
+    selectedEdge.removeData("identifier");// edgeでは、identifier自体無いが、既存モデルデータで含まれている属性を削除するために削除する。★
+    selectedEdge.removeData("required");
+  } else {
+    selectedEdge.data("required", isRequired);
+  }
+
+  // ここに追加 start
+  // ✅ projection_fields の収集
+  const projectionFields = [];
+  const section = document.getElementById("projectionFieldsSection");
+  if (section.style.display !== "none") {
+    const items = section.querySelectorAll(".projectionFieldItem");
+
+    items.forEach(item => {
+      const checkbox = item.querySelector("input[type='checkbox']");
+      const asInput = item.querySelector("input[type='text']");
+      const requiredInput = item.querySelector("input[data-required]");
+
+      if (checkbox?.checked) {
+        const from = checkbox.getAttribute("data-from");
+        const as = asInput?.value.trim();
+        const required = requiredInput?.checked || false;
+
+        const field = { from };
+        if (as && as !== from) field.as = as;
+        if (required) field.required = true;
+
+        projectionFields.push(field);
+      }
+    });
+  }
+
+  // ✅ edge に保存
+  selectedEdge.data("projection_fields", projectionFields);
+  // ここに追加 end
+
+  graphLabelUpdate();
+  document.getElementById("edgeEditPanel").style.display = "none";
+}
+
+function convertIncludeToRef() {
+  if (!selectedEdge) return;
+
+  const base_type = selectedEdge.data("type");
+  if (base_type !== "oneToOne-include" && base_type !== "oneToMany-include") return;
+
+  const edgeData = selectedEdge.data();
+  const cyInstance = selectedEdge.cy();
+
+  // 保存情報
+  const originalSource = edgeData.source;
+  const originalTarget = edgeData.target;
+
+  const newEdgeData = {
+    group: "edges",
+    data: {
+      id: generateUniqueId(), // 新しいID（または omit して Cytoscapeに任せる）
+      source: originalTarget, // ←向き反転
+      target: originalSource,
+      label: "ref",
+      type: "oneToOne-ref",
+      rel_type: "ref",        // タイプ設定フィールドに設定
+      org_type: edgeData.type
+    }
+  };
+
+  cyInstance.remove(selectedEdge); // 元エッジ削除
+  const newEdge = cyInstance.add(newEdgeData);
+  selectedEdge = newEdge;
+
+  // ダイアログUI更新
+  document.getElementById("edgeSourceName").textContent = newEdge.data("source");
+  document.getElementById("edgeTargetName").textContent = newEdge.data("target");
+  document.getElementById("edgeTypeName").textContent = newEdge.data("type");
+  document.getElementById("edgeLabelInput").value = newEdge.data("label");
+  document.getElementById("edgeImplInput").value = newEdge.data("impl_name") || "";
+  document.getElementById("conversionNotice").textContent =
+    `✅ include から ref に変換されました。元種別: ${newEdge.data("org_type")}`;
+
+  // 必要なら再レイアウト
+  // cyInstance.layout({ name: 'preset' }).run();
+}
+
+function convertRefToInclude() {
+  if (!selectedEdge) return;
+  const org_type = selectedEdge.data("org_type");
+  if (!org_type) return;
+  if (selectedEdge.data("type") !== "oneToOne-ref") return;
+  if (org_type !== "oneToOne-include" && org_type !== "oneToMany-include") return;
+  
+  const edgeData = selectedEdge.data();
+  const cyInstance = selectedEdge.cy();
+
+  const originalSource = edgeData.source;
+  const originalTarget = edgeData.target;
+
+  const newEdgeData = {
+    group: "edges",
+    data: {
+      id: generateUniqueId(), // または omit
+      source: originalTarget, // ←向き反転（元に戻す）
+      target: originalSource,
+      label: "include",
+      type: "oneToMany-include",
+      rel_type: "ref",        // タイプ設定フィールドに設定
+      org_type: edgeData.type
+    }
+  };
+
+  cyInstance.remove(selectedEdge);
+  const newEdge = cyInstance.add(newEdgeData);
+  selectedEdge = newEdge;
+
+  // ダイアログUI更新
+  document.getElementById("edgeSourceName").textContent = newEdge.data("source");
+  document.getElementById("edgeTargetName").textContent = newEdge.data("target");
+  document.getElementById("edgeTypeName").textContent = newEdge.data("type");
+  document.getElementById("edgeLabelInput").value = newEdge.data("label");
+  document.getElementById("edgeImplInput").value = newEdge.data("impl_name") || "";
+  document.getElementById("conversionNotice").textContent =
+    `✅ ref から include に変換されました。元種別: ${newEdge.data("org_type")}`;
+
+  // cyInstance.layout({ name: 'preset' }).run(); // 必要なら再レイアウト
+}
+
+function closeEdgeEdit() {
+  document.getElementById('edgeEditPanel').style.display = 'none';
+}
+
+// ノード抽出＋意味モデル構築
+function buildSimplifiedModel(elements) {
+  const model = {};
+  elements
+    .filter(el => el.group === "nodes")
+    .forEach(el => {
+      const label = el.data.label || el.data.id;
+      const attributes = el.data.fields || [];
+      model[label] = {};
+      attributes.forEach(attr => {
+        model[label][attr.name] = {
+          type: attr.type || "string",
+          required: attr.required || false,
+          discriminator: attr.discriminator || false,
+          identifier: attr.identifier || false,
+          description: attr.desc || ""
+        };
+      });
+    });
+  return model;
+}
+
+// テキスト形式に変換
+function generateModelText(model) {
+  let output = "# Business Fields Model\n";
+  output += "# 属性名: 型 [required] [discriminator] [identifier] - 説明\n\n";
+
+  for (const [section, fields] of Object.entries(model)) {
+    output += `[${section}]\n`;
+    for (const [name, info] of Object.entries(fields)) {
+      const flags = [];
+      if (info.required) flags.push("[required]");
+      if (info.discriminator) flags.push("[discriminator]");
+      if (info.identifier) flags.push("[identifier]");
+
+      const flagText = flags.length ? " " + flags.join(" ") : "";
+      const description = info.description || "";
+      output += `${name}: ${info.type}${flagText} - ${description}\n`;
+    }
+    output += `\n`;
+  }
+
+  return output;
+}
+
+// ダウンロード処理
+function downloadTextFile(filename, content) {
+  const blob = new Blob([content], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+document.getElementById("importBusinessFields").addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const text = reader.result;
+    const model = parseBusinessFieldsText(text);
+    console.log("読み込んだモデル:", model);
+    applyModelToGraph(model, cy_model);
+    alert("ビジネスフィールドを読み込みました！");
+    event.target.value = ""; // ← これがポイント！
+  };
+  reader.readAsText(file);
+});
+
+function parseBusinessFieldsText(text) {
+  const lines = text.split(/\r?\n/);
+  const model = {};
+  let currentSection = null;
+
+  lines.forEach(line => {
+    line = line.trim();
+    if (!line || line.startsWith("#")) return;
+
+    const sectionMatch = line.match(/^\[(.+?)\]$/);
+    if (sectionMatch) {
+      currentSection = sectionMatch[1];
+      model[currentSection] = {};
+      return;
+    }
+
+    if (currentSection) {
+      const match = line.match(/^([^:]+): ([^\s]+)((?: \[[^\]]+\])*) - (.+)$/);
+      if (match) {
+        const [, name, type, flagsRaw, desc] = match;
+        const flags = flagsRaw.match(/\[([^\]]+)\]/g) || [];
+        const flagSet = new Set(flags.map(f => f.replace(/[\[\]]/g, '').trim()));
+
+        model[currentSection][name.trim()] = {
+          type: type.trim(),
+          required: flagSet.has('required'),
+          discriminator: flagSet.has('discriminator'),
+          identifier: flagSet.has('identifier'),
+          description: desc.trim()
+        };
+      } else {
+        // 属性名のみの行に対応（日本語含む）
+        const nameOnlyMatch = line.match(/^[^\[\]#:]+$/);
+        if (nameOnlyMatch) {
+          const name = nameOnlyMatch[0].trim();
+          model[currentSection][name] = {
+            type: "string",
+            required: false,
+            discriminator: false,
+            identifier: false,
+            description: name
+          };
+        }
+      }
+    }
+  });
+
+  return model;
+}
+
+function applyModelToGraph(model, cy) {
+  cy.nodes().forEach(node => {
+    const label = node.data('id');
+    if (model[label]) {
+      const fields = Object.entries(model[label])
+        .map(([name, def]) => ({
+          name,
+          type: def.type || "string",
+          required: def.required || false,
+          discriminator: def.discriminator || false,
+          identifier: def.identifier || false,
+          desc: def.description || ""
+        }));
+      node.data('fields', fields); // ← フィールドに責務付きで反映
+    }
+  });
+}
+
+//リロードブロック
+document.addEventListener('keydown', function (e) {
+  // F5キー（keyCode 116）
+  if (e.keyCode === 116) {
+    e.preventDefault();
+    console.log("このページではリロードできません。");
+  }
+
+  // Ctrl + R（keyCode 82）
+  if (e.ctrlKey && e.keyCode === 82) {
+    e.preventDefault();
+    // alert("Ctrl+Rによるリロードは無効です。");
+    console.log("Ctrl+Rによるリロードは無効です。");
+  }
+});
+
+// データ整合性チェック関数
+function validateGraph(nodes, edges) {
+  const errors = [];
+
+  // --- ノードごとのチェック ---
+  nodes.forEach(node => {
+    const nodeId = node.data('id');
+    const implName = node.data('impl_name');
+    const fields = node.data('fields') || [];
+
+    // impl_name が必須
+    if (!implName) {
+      errors.push(`Node ${nodeId} is missing impl_name.`);
+    }
+
+    // フィールドごとのチェック
+    fields.forEach((f, i) => {
+      // name/type が必須
+      if (!f.name) errors.push(`Field ${i} in node ${implName || nodeId} has no name.`);
+      if (!f.type) errors.push(`Field ${f.name || i} in node ${implName || nodeId} has no type.`);
+
+      // object型の場合は構文検証
+      if (f.type === "object") {
+        if (f.value === undefined || f.value === null || f.value === "") {
+          // 空オブジェクトは許容（警告）
+          console.warn(`Field ${f.name} in node ${implName} has no value; assuming empty object.`);
+        } else {
+          try {
+            const parsed = typeof f.value === "string" ? JSON.parse(f.value) : f.value;
+            if (typeof parsed !== "object" || Array.isArray(parsed)) {
+              errors.push(`Field ${f.name} in node ${implName} is not a valid object.`);
+            }
+          } catch (e) {
+            errors.push(`Field ${f.name} in node ${implName} has invalid JSON structure.`);
+          }
+        }
+      }
+    });
+
+    // subtypeエッジのチェック（親ノードが存在するか）
+    const subtypeEdges = edges.filter(e =>
+      e.data("rel_type") === "subtype" && e.data("source") === nodeId
+    );
+    subtypeEdges.forEach(e => {
+      const parentId = e.data("target");
+      const parentNode = nodes.find(n => n.data('id') === parentId);
+      if (!parentNode) {
+        errors.push(`Subtype edge from ${nodeId} points to missing parent ${parentId}.`);
+      }
+    });
+
+    // ★ 多重継承チェック ★
+    if (subtypeEdges.length > 1) {
+      const parentIds = subtypeEdges.map(e => e.data("target")).join(", ");
+      errors.push(`Node ${implName || nodeId} has multiple subtype parents: ${parentIds}. Only one is allowed.`);
+    }
+
+  });
+
+  // ノード実装名の一意性チェック
+  const implNames = nodes
+    .map(n => n.data('impl_name'))
+    .filter(Boolean); // impl_name が存在するものだけ対象
+
+  // 重複検出
+  const duplicates = implNames.filter((name, i, arr) => arr.indexOf(name) !== i);
+
+  if (duplicates.length > 0) {
+    // 重複をユニーク化してエラーメッセージにまとめる
+    const dupList = [...new Set(duplicates)].join(', ');
+    errors.push(`Duplicate impl_name(s) found: ${dupList}`);
+  }
+
+  // --- エッジごとのチェック ---
+  edges.forEach(edge => {
+    const source = edge.data("source");
+    const target = edge.data("target");
+    const implName = edge.data("impl_name");
+    const implType = edge.data("impl_type");
+
+    // source/target が必須
+    if (!source || !target) {
+      errors.push(`Edge missing source or target: ${JSON.stringify(edge.data())}`);
+    }
+
+    // subtype以外のエッジに対するチェック
+    if (edge.data("rel_type") !== "subtype") {
+      const implType = edge.data("impl_type") || "";
+      const isObjectStar = implType.startsWith("*object<");
+
+      // impl_name が必須（ただし *object<...> の場合は例外）
+      if (!implName && !isObjectStar) {
+        errors.push(`Edge from ${source} to ${target} missing impl_name.`);
+      }
+
+      // impl_type が必須
+      if (!implType) {
+        errors.push(`Edge ${implName || "(unnamed)"} missing impl_type.`);
+      }
+    }
+
+    // *object<...> 型のエッジに対するチェック
+    if (implType && implType.startsWith("*object<")) {
+      const match = implType.match(/^\*object<(.+)>$/);
+      if (match) {
+        const targetImpl = match[1];
+        const targetNode = nodes.find(n => n.data("impl_name") === targetImpl);
+        if (!targetNode) {
+          errors.push(`Edge ${implName} refers to missing target impl_name: ${targetImpl}.`);
+        } else {
+          const projectionFields = edge.data("projection_fields") || [];
+          const targetFields = targetNode.data("fields") || [];
+
+          // projection_fields の妥当性チェック
+          projectionFields.forEach((proj, i) => {
+            if (!proj.from) {
+              errors.push(`Projection field ${i} in edge ${implName} is missing 'from'.`);
+            } else if (!targetFields.find(f => f.name === proj.from)) {
+              errors.push(`Projection field '${proj.from}' in edge ${implName} not found in target ${targetImpl}.`);
+            }
+            if (proj.as) {
+              const duplicates = projectionFields.filter(p => p.as === proj.as);
+              if (duplicates.length > 1) {
+                errors.push(`Duplicate 'as' name '${proj.as}' in edge ${implName}.`);
+              }
+            }
+          });
+        }
+      }
+    }
+  });
+
+  // --- ノード属性の一意性チェック ---
+  nodes.forEach(node => {
+    const implName = node.data('impl_name') || node.data('id');
+    const fields = node.data('fields') || [];
+
+    // discriminator が複数設定されていないか
+    const discriminatorFields = fields.filter(f => f.discriminator === true);
+    if (discriminatorFields.length > 1) {
+      const names = discriminatorFields.map(f => f.name || '(unnamed)').join(', ');
+      errors.push(`Node ${implName} has multiple discriminator fields: ${names}. Only one is allowed.`);
+    }
+  });
+
+  nodes.forEach(node => {
+    const implName = node.data('impl_name') || node.data('id');
+    const fields = node.data('fields') || [];
+
+    // identifier が複数設定されていないか
+    const identifierFields = fields.filter(f => f.identifier === true);
+    if (identifierFields.length > 1) {
+      const names = identifierFields.map(f => f.name || '(unnamed)').join(', ');
+      errors.push(`Node ${implName} has multiple identifier fields: ${names}. Only one is allowed.`);
+    }
+  });
+
+  return errors;
+}
+
+// 親ノードの再帰的展開
+function collectInheritedAttributes(nodeId, nodes, edges) {
+  const mergedProperties = {};
+  const mergedRequired = [];
+  const visited = new Set();
+  let discriminatorField = null;
+
+  function recurse(currentId) {
+    if (visited.has(currentId)) return;
+    visited.add(currentId);
+
+    const node = nodes.find(n => n.data('id') === currentId);
+    if (!node) return;
+
+    const implName = node.data('impl_name') || "";
+    const fields = node.data('fields') || [];
+
+    // ノード自身の fields を展開
+    fields.forEach(f => {
+      if (!f.name) return;
+      if (f.discriminator) {
+        // mergedProperties[f.name] = { const: implName };
+        mergedProperties[f.name] = { type: f.type }; // ✅ constは設定しない
+        discriminatorField = f.name;
+      } else {
+        mergedProperties[f.name] = { type: f.type };
+      }
+      if (f.required) mergedRequired.push(f.name);
+    });
+
+    // ノードが持つ通常エッジ属性を展開
+    edges.forEach(edge => {
+      if (edge.data("source") === currentId && edge.data("rel_type") !== "subtype") {
+        const impl_name = edge.data("impl_name");
+        const impl_type = edge.data("impl_type");
+        const required = edge.data("required");
+        const identifier = edge.data("identifier");
+
+        if (!impl_name || !impl_type) return;
+
+        let fieldSchema;
+        if (impl_type.startsWith("array<")) {
+          const itemType = impl_type.match(/^array<(.+)>$/)[1];
+          let itemsSchema;
+
+          if (["string", "number", "boolean", "integer"].includes(itemType)) {
+            itemsSchema = { type: itemType }; // ✅ プリミティブ型は直接 type にする
+          } else {
+            itemsSchema = { $ref: `#/definitions/${itemType}` }; // ✅ オブジェクト型は $ref
+          }
+
+          fieldSchema = {
+            type: "array",
+            items: itemsSchema
+          };
+
+        } else if (impl_type.startsWith("object<")) {
+          const objType = impl_type.match(/^object<(.+)>$/)[1];
+          fieldSchema = { $ref: `#/definitions/${objType}` };
+        } else {
+          fieldSchema = { type: impl_type };
+        }
+
+        if (identifier) fieldSchema.identifier = true;
+        mergedProperties[impl_name] = fieldSchema;
+        if (required) mergedRequired.push(impl_name);
+      }
+    });
+
+    // subtypeでさらに親を遡る
+    const parentEdges = edges.filter(e =>
+      e.data("rel_type") === "subtype" && e.data("source") === currentId
+    );
+    parentEdges.forEach(e => recurse(e.data("target")));
+  }
+
+  recurse(nodeId);
+  return { mergedProperties, mergedRequired, discriminatorField };
+}
+
+// check JSON Graph
+function checkGraph() {
+  const nodes = cy_model.nodes().filter(n => n.group() === 'nodes');
+  const edges = cy_model.edges();
+
+  const errors = validateGraph(nodes, edges);
+
+  if (errors.length > 0) {
+    console.error(`Graph validation failed: ${errors.length} error(s)`);
+
+    const displayErrors = errors.slice(0, 2);
+    displayErrors.forEach((err, i) => {
+      console.error(`Error ${i + 1}: ${err}`);
+    });
+
+    if (errors.length > 2) {
+      console.error(`Error 3: ...`);
+    }
+
+    alert(`JSON Graphに ${errors.length} 件のエラーがあります。\n` +
+      displayErrors.map((e, i) => `(${i + 1}) ${e}`).join("\n") +
+      (errors.length > 2 ? `\n(3) ...` : "")
+    );
+  } else {
+    alert(`モデルの整合性チェックで、問題は見つかりませんでした。`);
+  }
+  return;
+}
+
+// ファイル保存関数 downloadTextFile()
+async function saveTextFile(text, defaultFilename = "schema.json") {
+  try {
+    const options = {
+      suggestedName: defaultFilename,
+      types: [
+        {
+          description: "JSON Files",
+          accept: { "application/json": [".json"] },
+        },
+      ],
+    };
+
+    const handle = await window.showSaveFilePicker(options);
+    const writable = await handle.createWritable();
+    await writable.write(text);
+    await writable.close();
+    console.log("✅ ファイル保存完了:", handle.name);
+  } catch (err) {
+    console.warn("❌ 保存がキャンセルされました:", err);
+  }
+}
+
+// identifierリスト抽出(コードブック作成のため)
+function extractIdentifiers(nodes) {
+  const identifiers = [];
+
+  nodes.forEach(node => {
+    const implName = node.data('impl_name') || node.data('id');
+    const fields = node.data('fields') || [];
+
+    fields.forEach(f => {
+      if (f.identifier === true) {
+        identifiers.push({
+          node: implName,
+          field: f.name || '(unnamed)',
+          type: f.type || '(unknown)',
+          description: f.description || ''
+        });
+      }
+    });
+  });
+
+  return identifiers;
+}
+
+function expandObjectField(nodes, edges, implName) {
+  const targetNode = nodes.find(n => n.data("impl_name") === implName);
+  if (!targetNode) return {};
+
+  const obj = {};
+  const fields = targetNode.data("fields") || [];
+  fields.forEach(f => {
+    if (f.type === "array") {
+      obj[f.name] = [];
+    } else if (f.type.startsWith("object<")) {
+      const nestedImpl = f.type.match(/^object<(.+)>$/)[1];
+      obj[f.name] = expandObjectField(nodes, edges, nestedImpl);
+    } else {
+      obj[f.name] = f.type;
+    }
+  });
+  return obj;
+}
+
+function makeSimpleJson(nodes, edges, cur_node) {
+  const path = [];
+  let current = cur_node;
+
+  while (current) {
+    path.unshift(current);
+    const parentEdge = edges.find(e =>
+      e.data("rel_type") === "subtype" && e.data("source") === current.data("id")
+    );
+    current = parentEdge
+      ? nodes.find(n => n.data("id") === parentEdge.data("target"))
+      : null;
+  }
+
+  console.log(path);
+
+  const json = {};
+  let index = 0;
+  path.forEach(node => {
+    const fields = node.data("fields") || [];
+    console.log(index);
+
+    // フィールド処理
+    fields.forEach(f => {
+      if (f.discriminator){
+        json[f.name] = f.type;
+        if ((index + 1) < path.length){
+          json[f.name] = path[index + 1].data("impl_name");
+        }
+      } else if (f.type === "array" || f.type.startsWith("array<")) {
+        json[f.name] = []; // 空配列にする
+      } else if (f.type.startsWith("object<")) {
+        const implName = f.type.match(/^object<(.+)>$/)[1];
+        json[f.name] = expandObjectField(nodes, edges, implName);
+      } else {
+        json[f.name] = f.type;
+      }
+    });
+
+    // ✅ include エッジからフィールドを追加
+    edges.filter(e =>
+      e.data("source") === node.data("id") &&
+      e.data("rel_type") === "include" &&
+      e.data("impl_name") && e.data("impl_type")
+    ).forEach(edge => {
+      const implName = edge.data("impl_name");
+      const implType = edge.data("impl_type");
+
+      if (implType.startsWith("array<")) {
+        json[implName] = [];
+      } else if (implType.startsWith("object<")) {
+        const targetImpl = implType.match(/^object<(.+)>$/)[1];
+        json[implName] = expandObjectField(nodes, edges, targetImpl);
+      } else if (implType === "object") {
+        json[implName] = {}; // 空オブジェクトで初期化
+      } else {
+        json[implName] = implType;
+      }
+
+    });
+
+    // ref エッジからフィールドを追加
+    edges.filter(e =>
+      e.data("source") === node.data("id") &&
+      e.data("rel_type") === "ref" &&
+      e.data("impl_type")
+    ).forEach(edge => {
+      const implName = edge.data("impl_name");
+      const implType = edge.data("impl_type");
+
+      if (implType.startsWith("*object<")) {
+        // projection_fields による部分参照
+        const projections = edge.data("projection_fields") || [];
+        projections.forEach(p => {
+          const key = p.as || p.from;
+          const targetImpl = implType.match(/^\*object<(.+)>$/)[1];
+          const targetNode = nodes.find(n => n.data("impl_name") === targetImpl);
+          const targetField = targetNode?.data("fields")?.find(f => f.name === p.from);
+          json[key] = targetField ? targetField.type : "unknown";
+        });
+      } else {
+        // 通常の ref は ID 参照として string を出力
+        if (implName) {
+          json[implName] = "string";
+        }
+      }
+    });
+
+    // projection_fields
+    edges.filter(e =>
+      e.data("source") === node.data("id") &&
+      e.data("impl_type") &&
+      e.data("impl_type").startsWith("*object<")
+    ).forEach(edge => {
+      const projections = edge.data("projection_fields") || [];
+      projections.forEach(p => {
+        const key = p.as || p.from;
+        const targetImpl = edge.data("impl_type").match(/^\*object<(.+)>$/)[1];
+        const targetNode = nodes.find(n => n.data("impl_name") === targetImpl);
+        const targetField = targetNode?.data("fields")?.find(f => f.name === p.from);
+        json[key] = targetField ? targetField.type : "unknown";
+      });
+    });
+    index += 1;
+  });
+
+  return json;
+}
+
+// JSON プレビュー機能呼び出し
+function previewJson() {
+  
+  const nodes = cy_model.nodes().filter(n => n.group() === 'nodes');
+  const edges = cy_model.edges();
+  if (!selectedNode) {
+    alert("ノードを選択してプレビューボタンを押してください。");
+    return;
+  }
+
+  const errors = validateGraph(nodes, edges);
+  if (errors.length > 0) {
+    console.error("Validation errors:", errors);
+    alert("モデルに問題があります。チェック結果を表示します。");
+    checkGraph();
+    return;
+  }
+
+  closeAllDialogs();
+  
+  const json = makeSimpleJson(nodes, edges, selectedNode);
+  const jsonString = JSON.stringify(json, null, 2);
+  console.log(jsonString);
+  openPreviewDialog(jsonString);
+}
+
+//プレビューダイアログ関係
+function openPreviewDialog(jsonString) {
+  const dialog = document.getElementById("previewDialog");
+  const content = document.getElementById("previewContent");
+
+  if (!dialog || !content) {
+    console.error("Preview dialog elements not found.");
+    return;
+  }
+
+  content.textContent = jsonString;
+  dialog.style.display = "block"; // ダイアログを表示
+}
+
+function closePreviewDialog() {
+  const dialog = document.getElementById("previewDialog");
+  if (dialog) {
+    dialog.style.display = "none"; // ダイアログを非表示
+  }
+}
+
+function copyPreviewJson() {
+  const text = document.getElementById("previewContent").textContent;
+  navigator.clipboard.writeText(text);
+  alert("JSONをコピーしました！");
+}
+</script>
+
+</body>
+</html>

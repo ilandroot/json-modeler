@@ -1,0 +1,1 @@
+live-server --open=./json-modeler.html --watch=. --port=8088 .
