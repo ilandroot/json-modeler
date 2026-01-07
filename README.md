@@ -91,4 +91,8 @@ MIT
 - [JSONデータモデリング背景説明 PDF](docs/json-modeler-background.pdf)
 - [Graph Scriptの資料](docs/graph_script_spec.pdf)
 
+## Author
+Hisao  
+Founder of Jsonic Lab  
+Developer of json-modeler
 
