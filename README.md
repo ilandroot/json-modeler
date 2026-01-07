@@ -70,6 +70,16 @@ npm install -g live-server
 
 ---
 
+## ■ 使用しているライブラリ
+
+json-modeler は以下のライブラリを CDN 経由で利用しています。
+
+- **Cytoscape.js**  
+  グラフ描画およびノード・エッジのレイアウトに使用  
+  https://js.cytoscape.org/
+
+---
+
 ## ■ ライセンス
 
 MIT
