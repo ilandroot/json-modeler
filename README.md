@@ -78,7 +78,7 @@ MIT
 
 ## ■ ドキュメント
 
-- [背景説明 PDF](docs/json-modeler-background.pdf)
+- [JSONデータモデリング背景説明 PDF](docs/json-modeler-background.pdf)
 - [Graph Scriptの資料](docs/graph_script_spec.pdf)
 
 
