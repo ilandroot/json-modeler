@@ -29,8 +29,8 @@ json-modeler/
  ├─ web.bat               ← Windows 用起動スクリプト   
  ├─ README.md   
  └─ docs/   
-  ├─ json-modeler-background.pdf   ← JSON モデリングの背景説明   
-  └─ graph_script_spec.pdf         ← Graph Scriptの資料  
+　　├─ json-modeler-background.pdf   ← JSON モデリングの背景説明   
+　　└─ graph_script_spec.pdf         ← Graph Scriptの資料  
 
 ---
 
