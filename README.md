@@ -24,13 +24,13 @@ JSON を自動生成します。
 ---
 
 ## ■ ファイル構成
-json-modeler/
- ├─ json-modeler.html     ← 本体（1 ファイルで動作） 
- ├─ web.bat               ← Windows 用起動スクリプト 
- ├─ README.md 
- └─ docs/ 
-  ├─ json-modeler-background.pdf   ← JSON モデリングの背景説明 
-  └─ graph_script_spec.pdf         ← Graph Scriptの資料
+json-modeler/  
+ ├─ json-modeler.html     ← 本体（1 ファイルで動作）   
+ ├─ web.bat               ← Windows 用起動スクリプト   
+ ├─ README.md   
+ └─ docs/   
+  ├─ json-modeler-background.pdf   ← JSON モデリングの背景説明   
+  └─ graph_script_spec.pdf         ← Graph Scriptの資料  
 
 ---
 
