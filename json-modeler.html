@@ -186,6 +186,11 @@ option.non-generic {
   overflow: auto;
 }
 
+#previewNodeName {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
 #previewContent {
   max-height: 60vh;   /* JSON 部分だけに高さ制限 */
   overflow: auto;     /* JSON 部分にスクロールバーを出す */
@@ -439,6 +444,7 @@ option.non-generic {
 
   <!-- プレビューダイアログ -->
   <div id="previewDialog" class="dialog">
+  <div id="previewNodeName"></div>   <!-- ← 追加 -->
   <pre id="previewContent"></pre>
   <button onclick="closePreviewDialog()">閉じる</button>
   <button onclick="copyPreviewJson()">コピー</button>
@@ -2560,11 +2566,12 @@ function previewJson() {
   const json = makeSimpleJson(nodes, edges, selectedNode);
   const jsonString = JSON.stringify(json, null, 2);
   console.log(jsonString);
-  openPreviewDialog(jsonString);
+  const title = `[${selectedNode.data("id")}]`;
+  openPreviewDialog(title, jsonString);
 }
 
 //プレビューダイアログ関係
-function openPreviewDialog(jsonString) {
+function openPreviewDialog(title,jsonString) {
   const dialog = document.getElementById("previewDialog");
   const content = document.getElementById("previewContent");
 
@@ -2572,7 +2579,7 @@ function openPreviewDialog(jsonString) {
     console.error("Preview dialog elements not found.");
     return;
   }
-
+  document.getElementById("previewNodeName").textContent = title;
   content.textContent = jsonString;
   dialog.style.display = "block"; // ダイアログを表示
 }
