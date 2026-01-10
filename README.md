@@ -40,8 +40,7 @@ json-modeler/
 
 ## ■ 起動方法（Windows）
 
-zip を展開し、以下をダブルクリックしてください。
-
+zip を展開し、web.bat をダブルクリックしてください。
 ブラウザが自動的に開き、json-modeler が起動します。
 
 ---
