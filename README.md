@@ -31,8 +31,8 @@ json-modeler/
  ├─ docs/   
  |　├─ json-modeler-background.pdf   ← JSON モデリングの背景説明   
  |　└─ graph_script_spec.pdf         ← Graph Scriptの資料  
- └─ example/ 
- 　 └─ graph-script-sudoku.txt   ← 数独のGraph Scriptファイル例
+ └─ example/  
+ 　 └─ graph-script-sudoku.txt   ← 数独のGraph Scriptファイル例  
 
 ---
 
