@@ -96,7 +96,6 @@ MIT
 - [Graph Scriptの資料](docs/graph_script_spec.pdf)
 
 ## Author
-Hisao  
-Founder of Jsonic Lab  
+Jsonic Lab  
 Developer of json-modeler
 
