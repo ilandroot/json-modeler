@@ -1528,8 +1528,17 @@ function updateEdgeLabels(mode = 'default') {
           label = edge.data('rel_type') || '';
           break;
         case 'impl_name':
-          label = edge.data('impl_name')?.trim();
-          label = label ? label : '<undefined>';
+          let impl = edge.data('impl_name')?.trim();
+
+          if (!impl) {
+            if (edge.data('impl_type')?.startsWith('*object')) {
+              label = '<by projection>';
+            } else {
+              label = '<undefined>';
+            }
+          } else {
+            label = impl;
+          }
           break;
         case 'default':
           label = edge.data('rel_name')?.trim() || edge.data('rel_type') || '';
