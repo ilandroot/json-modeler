@@ -1532,7 +1532,7 @@ function updateEdgeLabels(mode = 'default') {
 
           if (!impl) {
             if (edge.data('impl_type')?.startsWith('*object')) {
-              label = '<by projection>';
+              label = '<by projection>'; // *object<>の時に、<by projection>表示
             } else {
               label = '<undefined>';
             }
