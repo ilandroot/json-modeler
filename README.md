@@ -64,13 +64,14 @@ zip を展開し、web.bat をダブルクリックしてください。
 
 インストール後、Node.js、npm の versionは、以下で確認できます：  
 node -v  
-npm -v  
+npm -v
+```
 例:
 >node -v  
 v22.14.0  
 >npm -v  
 11.1.0  
-
+```
 ### 2. live-server をインストールする
 
 npm install -g live-server
