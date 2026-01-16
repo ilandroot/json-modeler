@@ -64,9 +64,9 @@ zip を展開し、web.bat をダブルクリックしてください。
 
 インストール後、Node.js、npm の versionは、以下で確認できます：  
 node -v  
-npm -v
+npm -v  
+実行例:
 ```
-例:
 >node -v  
 v22.14.0  
 >npm -v  
