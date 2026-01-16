@@ -200,6 +200,25 @@ option.non-generic {
   white-space: pre;   /* 改行保持、横スクロール許可 */
 }
 
+#previewTabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+#previewTabs button {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  background: #eee;
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+}
+
+#previewTabs button.active {
+  background: white;
+  border-bottom: 1px solid white;
+  font-weight: bold;
+}
   </style>
   <!-- CDNライブラリ読み込み -->
   <script src="https://unpkg.com/cytoscape@3.27.0/dist/cytoscape.min.js"></script>
@@ -444,7 +463,14 @@ option.non-generic {
 
   <!-- プレビューダイアログ -->
   <div id="previewDialog" class="dialog">
-  <div id="previewNodeName"></div>   <!-- ← 追加 -->
+  <div id="previewNodeName"></div>
+  <!-- ▼ 追加：タブ -->
+  <div id="previewTabs" style="margin-bottom: 8px;">
+    <button id="tabJson" onclick="setPreviewMode('json')">JSON</button>
+    <button id="tabJs" onclick="setPreviewMode('js')">JS Object</button>
+  </div>
+
+  <!-- ▲ ここまで -->
   <pre id="previewContent"></pre>
   <button onclick="closePreviewDialog()">閉じる</button>
   <button onclick="copyPreviewJson()">コピー</button>
@@ -2553,6 +2579,10 @@ function makeSimpleJson(nodes, edges, cur_node) {
 }
 
 // JSON プレビュー機能呼び出し
+let currentPreviewObject = null;
+let currentPreviewJsonString = "";
+let previewMode = 'json';
+
 function previewJson() {
   
   const nodes = cy_model.nodes().filter(n => n.group() === 'nodes');
@@ -2573,7 +2603,9 @@ function previewJson() {
   closeAllDialogs();
   
   const json = makeSimpleJson(nodes, edges, selectedNode);
+  currentPreviewObject = json;
   const jsonString = JSON.stringify(json, null, 2);
+  currentPreviewJsonString = jsonString; 
   console.log(jsonString);
   const title = `[${selectedNode.data("id")}]`;
   openPreviewDialog(title, jsonString);
@@ -2591,6 +2623,15 @@ function openPreviewDialog(title,jsonString) {
   document.getElementById("previewNodeName").textContent = title;
   content.textContent = jsonString;
   dialog.style.display = "block"; // ダイアログを表示
+  // 初期タブ状態
+  const tabJson = document.querySelector("#previewTabs button:nth-child(1)");
+  const tabJs = document.querySelector("#previewTabs button:nth-child(2)");
+
+  if (tabJson && tabJs) {
+    tabJson.classList.add("active");
+    tabJs.classList.remove("active");
+  }
+
 }
 
 function closePreviewDialog() {
@@ -2605,6 +2646,32 @@ function copyPreviewJson() {
   navigator.clipboard.writeText(text);
   alert("JSONをコピーしました！");
 }
+
+function toJsObjectLiteral(jsonString) {
+  return jsonString.replace(/"([^"]+)":/g, '$1:');
+}
+
+function updatePreviewContent() {
+  if (previewMode === 'json') {
+    previewContent.textContent = currentPreviewJsonString;
+  } else {
+    previewContent.textContent = toJsObjectLiteral(currentPreviewJsonString);
+  }
+}
+
+function setPreviewMode(mode) {
+  previewMode = mode;
+  
+  const tabJson = document.getElementById("tabJson");
+  const tabJs = document.getElementById("tabJs");
+
+  tabJson.classList.toggle("active", mode === "json");
+  tabJs.classList.toggle("active", mode === "js");
+
+  updatePreviewContent();
+}
+
+
 </script>
 
 </body>
