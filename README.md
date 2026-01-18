@@ -39,7 +39,7 @@ json-modeler/
    └─ graph-script-sudoku.txt ← 数独のGraph Scriptファイル例
 ```
 
-example/mk_graph_script.bat は、引数にモデル名を指定して実行します。
+ example/mk_graph_script.bat は、引数にモデル名を指定して実行します。
 ---
 
 ## ■ 起動方法（Windows）
