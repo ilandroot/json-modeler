@@ -38,10 +38,10 @@ json-modeler/
    ├─ graph-script-futoshiki.txt ← 不等式のGraph Scriptファイル例
    └─ graph-script-sudoku.txt ← 数独のGraph Scriptファイル例
 ```
-
-
 ---
- example/mk_graph_script.bat は、引数にモデル名を指定して実行します。
+example/mk_graph_script.bat は、引数にモデル名を指定して実行します。  
+例:  
+ mk_graph_script.bat futoshiki [Enter]  
 
 ## ■ 起動方法（Windows）
 
