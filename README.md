@@ -41,7 +41,7 @@ json-modeler/
 ---
 example/mk_graph_script.bat は、引数にモデル名を指定して実行します。  
 例:  
- mk_graph_script.bat futoshiki [Enter]  
+ mk_graph_script.bat futoshiki  
 
 ## ■ 起動方法（Windows）
 
