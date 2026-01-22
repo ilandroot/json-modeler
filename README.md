@@ -35,7 +35,7 @@ json-modeler/
 │  └─ graph_script_spec.pdf ← Graph Scriptの資料
 └─ example/
    ├─ mk_graph_script.bat ← Graph Scriptファイルを作成するバッチファイル
-   ├─ graph-script-futoshiki.txt ← 不等式のGraph Scriptファイル例
+   ├─ graph-script-futoshiki.txt ← 不等式パズルのGraph Scriptファイル例
    └─ graph-script-sudoku.txt ← 数独のGraph Scriptファイル例
 ```
 ---
