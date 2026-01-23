@@ -2602,7 +2602,7 @@ function previewJson() {
   }
 
   closeAllDialogs();
-  
+
   setPreviewMode('json');
 
   const json = makeSimpleJson(nodes, edges, selectedNode);
@@ -2657,30 +2657,35 @@ function toJsObjectLiteral(jsonString) {
 function toJsObjectLiteralShorthand(jsonString) {
   const obj = JSON.parse(jsonString);
 
-  function convert(value) {
+  function convert(value, indentLevel = 0) {
+    const indent = "  ".repeat(indentLevel);
+    const childIndent = "  ".repeat(indentLevel + 1);
+
+    // ★ 配列は省略記法扱いにする
     if (Array.isArray(value)) {
-      // 配列は省略せず、プロパティ名だけにする
-      return "[]";
-    } else if (value !== null && typeof value === "object") {
+      return null; // 値は使わない
+    }
+
+    if (value !== null && typeof value === "object") {
       const entries = Object.entries(value).map(([key, val]) => {
-        // ★ プリミティブ型なら省略記法にする
-        if (typeof val !== "object") {
-          return key;
+
+        // ★ プリミティブ値も配列も省略記法にする
+        if (typeof val !== "object" || Array.isArray(val)) {
+          return `${childIndent}${key}`;
         }
 
-        // オブジェクトなら再帰処理
-        const converted = convert(val);
-        return `${key}: ${converted}`;
+        // オブジェクトは再帰処理
+        const converted = convert(val, indentLevel + 1);
+        return `${childIndent}${key}: ${converted}`;
       });
 
-      return `{ ${entries.join(", ")} }`;
-    } else {
-      // プリミティブ値は省略記法対象なのでここには来ない
-      return String(value);
+      return `{\n${entries.join(",\n")}\n${indent}}`;
     }
+
+    return String(value);
   }
 
-  return convert(obj);
+  return convert(obj, 0);
 }
 
 function updatePreviewContent() {
