@@ -468,6 +468,7 @@ option.non-generic {
   <div id="previewTabs" style="margin-bottom: 8px;">
     <button id="tabJson" onclick="setPreviewMode('json')">JSON</button>
     <button id="tabJs" onclick="setPreviewMode('js')">JS Object</button>
+    <button id="tabJsShorthand" onclick="setPreviewMode('js-shorthand')">JS Object (Shorthand)</button>
   </div>
 
   <!-- ▲ ここまで -->
@@ -2602,6 +2603,8 @@ function previewJson() {
 
   closeAllDialogs();
   
+  setPreviewMode('json');
+
   const json = makeSimpleJson(nodes, edges, selectedNode);
   currentPreviewObject = json;
   const jsonString = JSON.stringify(json, null, 2);
@@ -2651,9 +2654,40 @@ function toJsObjectLiteral(jsonString) {
   return jsonString.replace(/"([^"]+)":/g, '$1:');
 }
 
+function toJsObjectLiteralShorthand(jsonString) {
+  const obj = JSON.parse(jsonString);
+
+  function convert(value) {
+    if (Array.isArray(value)) {
+      // 配列は省略せず、プロパティ名だけにする
+      return "[]";
+    } else if (value !== null && typeof value === "object") {
+      const entries = Object.entries(value).map(([key, val]) => {
+        // ★ プリミティブ型なら省略記法にする
+        if (typeof val !== "object") {
+          return key;
+        }
+
+        // オブジェクトなら再帰処理
+        const converted = convert(val);
+        return `${key}: ${converted}`;
+      });
+
+      return `{ ${entries.join(", ")} }`;
+    } else {
+      // プリミティブ値は省略記法対象なのでここには来ない
+      return String(value);
+    }
+  }
+
+  return convert(obj);
+}
+
 function updatePreviewContent() {
   if (previewMode === 'json') {
     previewContent.textContent = currentPreviewJsonString;
+  } else if (previewMode === 'js-shorthand') {
+    previewContent.textContent = toJsObjectLiteralShorthand(currentPreviewJsonString);
   } else {
     previewContent.textContent = toJsObjectLiteral(currentPreviewJsonString);
   }
@@ -2664,9 +2698,11 @@ function setPreviewMode(mode) {
   
   const tabJson = document.getElementById("tabJson");
   const tabJs = document.getElementById("tabJs");
+  const tabJsShorthand = document.getElementById("tabJsShorthand"); // ★追加
 
   tabJson.classList.toggle("active", mode === "json");
   tabJs.classList.toggle("active", mode === "js");
+  tabJsShorthand.classList.toggle("active", mode === "js-shorthand"); // ★追加
 
   updatePreviewContent();
 }
