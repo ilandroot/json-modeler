@@ -1239,6 +1239,12 @@ function closeNodeDialog() {
 let lastClickPosition = { x: 100, y: 100 };
 setupClickPositionTracking();
 
+// 選択されたアイテムをクリア
+function clear_selected_items(){
+  selectedNode = null;
+  selectedEdge = null;
+}
+
 // 画面クリック位置を保存するハンドラ
 function setupClickPositionTracking() {
   cy_model.on('tap', function(event) {
@@ -1246,6 +1252,8 @@ function setupClickPositionTracking() {
       lastClickPosition = event.position;
       console.log("tap !!!");
       console.log(lastClickPosition);
+      clear_selected_items(); // 選択されていたアイテムの選択解除
+      closeAllDialogs(); // ★ これを追加
     }
   });
 }
