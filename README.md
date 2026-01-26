@@ -93,6 +93,12 @@ json-modeler は以下のライブラリを CDN 経由で利用しています�
 
 ---
 
+## ■ 関連動画
+
+[Youtube](https://www.youtube.com/channel/UC1G__p4qpLkNK8nzYm_e9Iw)
+
+---
+
 ## ■ ライセンス
 
 MIT
