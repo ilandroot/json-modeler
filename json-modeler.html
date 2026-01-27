@@ -296,7 +296,6 @@ option.non-generic {
 
   <input type="file" id="modelFileInput" style="display:none" accept=".txt" />
   <input type="file" id="fileInput" accept=".json" style="display:none;">
-  <input type="file" id="importBusinessFields" style="display:none" />
   <input type="file" id="saveJaonSchema" style="display:none" />
 
   <!-- トップメニュー ここまで -->
@@ -2042,72 +2041,6 @@ function downloadTextFile(filename, content) {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(link.href);
-}
-
-document.getElementById("importBusinessFields").addEventListener("change", (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    const text = reader.result;
-    const model = parseBusinessFieldsText(text);
-    console.log("読み込んだモデル:", model);
-    applyModelToGraph(model, cy_model);
-    alert("ビジネス属性を読み込みました！");
-    event.target.value = ""; // ← これがポイント！
-  };
-  reader.readAsText(file);
-});
-
-function parseBusinessFieldsText(text) {
-  const lines = text.split(/\r?\n/);
-  const model = {};
-  let currentSection = null;
-
-  lines.forEach(line => {
-    line = line.trim();
-    if (!line || line.startsWith("#")) return;
-
-    const sectionMatch = line.match(/^\[(.+?)\]$/);
-    if (sectionMatch) {
-      currentSection = sectionMatch[1];
-      model[currentSection] = {};
-      return;
-    }
-
-    if (currentSection) {
-      const match = line.match(/^([^:]+): ([^\s]+)((?: \[[^\]]+\])*) - (.+)$/);
-      if (match) {
-        const [, name, type, flagsRaw, desc] = match;
-        const flags = flagsRaw.match(/\[([^\]]+)\]/g) || [];
-        const flagSet = new Set(flags.map(f => f.replace(/[\[\]]/g, '').trim()));
-
-        model[currentSection][name.trim()] = {
-          type: type.trim(),
-          required: flagSet.has('required'),
-          discriminator: flagSet.has('discriminator'),
-          identifier: flagSet.has('identifier'),
-          description: desc.trim()
-        };
-      } else {
-        // 属性名のみの行に対応（日本語含む）
-        const nameOnlyMatch = line.match(/^[^\[\]#:]+$/);
-        if (nameOnlyMatch) {
-          const name = nameOnlyMatch[0].trim();
-          model[currentSection][name] = {
-            type: "string",
-            required: false,
-            discriminator: false,
-            identifier: false,
-            description: name
-          };
-        }
-      }
-    }
-  });
-
-  return model;
 }
 
 function applyModelToGraph(model, cy) {
