@@ -1,0 +1,328 @@
+[
+  {
+    "data": {
+      "id": "不等式パズル",
+      "label": "不等式パズル",
+      "isGenericType": false,
+      "impl_name": "futoshiki",
+      "fields": [
+        {
+          "name": "size",
+          "type": "integer",
+          "desc": "サイズ",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        }
+      ]
+    },
+    "position": {
+      "x": -25.255450482861413,
+      "y": 206.85102441961257
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "セル",
+      "label": "セル",
+      "isGenericType": false,
+      "impl_name": "cell",
+      "fields": [
+        {
+          "name": "row",
+          "type": "integer",
+          "desc": "行",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        },
+        {
+          "name": "col",
+          "type": "integer",
+          "desc": "列",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        },
+        {
+          "name": "num",
+          "type": "integer",
+          "desc": "数字",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        },
+        {
+          "name": "cell_type",
+          "type": "string",
+          "desc": "セルタイプ",
+          "required": true,
+          "discriminator": true,
+          "identifier": false
+        }
+      ]
+    },
+    "position": {
+      "x": 115,
+      "y": 175
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "不等号",
+      "label": "不等号",
+      "isGenericType": false,
+      "impl_name": "futogo"
+    },
+    "position": {
+      "x": 110.45837929937403,
+      "y": 282.93569739064077
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "ヒントセル",
+      "label": "ヒントセル",
+      "isGenericType": false,
+      "impl_name": "hint"
+    },
+    "position": {
+      "x": 277.88317572429213,
+      "y": 116.53429865934426
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": true,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "入力セル",
+      "label": "入力セル",
+      "isGenericType": false,
+      "impl_name": "input",
+      "fields": [
+        {
+          "name": "options",
+          "type": "array<integer>",
+          "desc": "数字候補",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        }
+      ]
+    },
+    "position": {
+      "x": 277.3810283696274,
+      "y": 216.37513789812223
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "不等式パズル",
+      "target": "セル",
+      "type": "oneToMany-include",
+      "rel_type": "include",
+      "rel_name": "盤面",
+      "label": "盤面",
+      "id": "7cafa106-e7fd-48db-87df-5187e017d189",
+      "impl_name": "cells",
+      "impl_type": "array<cell>",
+      "required": true,
+      "projection_fields": []
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "不等式パズル",
+      "target": "不等号",
+      "type": "oneToMany-include",
+      "rel_type": "include",
+      "rel_name": "不等号",
+      "label": "不等号",
+      "id": "fcaf9605-7774-487d-9b46-f0e203ecdc6b",
+      "impl_name": "futogos",
+      "impl_type": "array<futogo>",
+      "required": true,
+      "projection_fields": []
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "不等号",
+      "target": "セル",
+      "type": "oneToOne-ref",
+      "rel_type": "ref",
+      "rel_name": "lower",
+      "label": "lower",
+      "id": "0981b604-a077-417f-b697-8ac82492a0d9",
+      "impl_name": "",
+      "impl_type": "*object<cell>",
+      "projection_fields": [
+        {
+          "from": "row",
+          "as": "lc_row",
+          "required": true
+        },
+        {
+          "from": "col",
+          "as": "lc_col",
+          "required": true
+        }
+      ]
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "不等号",
+      "target": "セル",
+      "type": "oneToOne-ref",
+      "rel_type": "ref",
+      "rel_name": "upper",
+      "label": "upper",
+      "id": "5f49b3d2-8aab-4690-b36b-3dbc49ea569a",
+      "impl_name": "",
+      "impl_type": "*object<cell>",
+      "projection_fields": [
+        {
+          "from": "row",
+          "as": "uc_row",
+          "required": true
+        },
+        {
+          "from": "col",
+          "as": "uc_col",
+          "required": true
+        }
+      ]
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "ヒントセル",
+      "target": "セル",
+      "type": "subtype",
+      "rel_type": "subtype",
+      "label": "subtype",
+      "id": "bdd33522-7b39-4dc4-bd94-24dbcadbb4a5"
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "入力セル",
+      "target": "セル",
+      "type": "subtype",
+      "rel_type": "subtype",
+      "label": "subtype",
+      "id": "85232fa0-a07c-47c9-85b1-5db8bce7902c"
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  }
+]
