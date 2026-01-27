@@ -468,6 +468,7 @@ option.non-generic {
     <button id="tabJson" onclick="setPreviewMode('json')">JSON</button>
     <button id="tabJs" onclick="setPreviewMode('js')">JS Object</button>
     <button id="tabJsShorthand" onclick="setPreviewMode('js-shorthand')">JS Object (Shorthand)</button>
+    <button id="tabJsVars" onclick="setPreviewMode('js-vars')">JS Variables</button>
   </div>
 
   <!-- ▲ ここまで -->
@@ -2629,11 +2630,36 @@ function toJsObjectLiteralShorthand(jsonString) {
   return convert(obj, 0);
 }
 
+function toJsVariablesLiteral(jsonString) {
+  const obj = JSON.parse(jsonString);
+  let lines = [];
+
+  for (const key in obj) {
+    const value = obj[key];
+
+    // 値の種類に応じて文字列化
+    let v;
+    if (Array.isArray(value)) {
+      v = '[]';
+    } else if (typeof value === 'object' && value !== null) {
+      v = '{}';
+    } else {
+      v = JSON.stringify(value);
+    }
+
+    lines.push(`let ${key} = ${v};`);
+  }
+
+  return lines.join('\n');
+}
+
 function updatePreviewContent() {
   if (previewMode === 'json') {
     previewContent.textContent = currentPreviewJsonString;
   } else if (previewMode === 'js-shorthand') {
     previewContent.textContent = toJsObjectLiteralShorthand(currentPreviewJsonString);
+  } else if (previewMode === 'js-vars') {   // ★ 追加
+    previewContent.textContent = toJsVariablesLiteral(currentPreviewJsonString); // ★ 追加
   } else {
     previewContent.textContent = toJsObjectLiteral(currentPreviewJsonString);
   }
@@ -2644,11 +2670,13 @@ function setPreviewMode(mode) {
   
   const tabJson = document.getElementById("tabJson");
   const tabJs = document.getElementById("tabJs");
-  const tabJsShorthand = document.getElementById("tabJsShorthand"); // ★追加
+  const tabJsShorthand = document.getElementById("tabJsShorthand");
+  const tabJsVars = document.getElementById("tabJsVars"); // ★追加
 
   tabJson.classList.toggle("active", mode === "json");
   tabJs.classList.toggle("active", mode === "js");
-  tabJsShorthand.classList.toggle("active", mode === "js-shorthand"); // ★追加
+  tabJsShorthand.classList.toggle("active", mode === "js-shorthand");
+  tabJsVars.classList.toggle("active", mode === "js-vars"); // ★追加
 
   updatePreviewContent();
 }
