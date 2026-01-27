@@ -437,9 +437,9 @@ option.non-generic {
     <input type="text" id="edgeImplInput"><br>
 
     <div id="projectionFieldsSection" style="margin-top:12px; display:none;">
-      <label>参照フィールド（projection_fields）:</label><br>
+      <label>参照属性設定（projection_fields）:</label><br>
       <div id="projectionFieldsList" style="margin-left:8px;">
-        <!-- 動的にフィールド一覧を追加 -->
+        <!-- 動的に参照先ノード属性一覧を追加 -->
       </div>
     </div>
 
@@ -1659,7 +1659,7 @@ function updateProjectionFieldsList(finalType, targetNode, cy_model, edge) {
   let nativeFields = [];
   let derivedFields = [];
 
-  // 1) targetNode の直接フィールド
+  // 1) targetNode の直接属性
   (targetNode.data("fields") || []).forEach(f => {
     nativeFields.push({ name: f.name, origin: "native" });
   });
@@ -1684,10 +1684,10 @@ function updateProjectionFieldsList(finalType, targetNode, cy_model, edge) {
 
   const projectionFields = edge.data("projection_fields") || [];
 
-  // 3) UI 出力: native フィールド
+  // 3) UI 出力: native 属性
   if (nativeFields.length > 0) {
     const header = document.createElement("div");
-    header.textContent = "🔹 Native フィールド";
+    header.textContent = "🔹 参照先属性マッピング";
     header.style.fontWeight = "bold";
     list.appendChild(header);
 
@@ -1709,10 +1709,10 @@ function updateProjectionFieldsList(finalType, targetNode, cy_model, edge) {
     });
   }
 
-  // 4) UI 出力: 派生フィールド
+  // 4) UI 出力: 派生属性
   if (derivedFields.length > 0) {
     const header = document.createElement("div");
-    header.textContent = "🔹 派生フィールド";
+    header.textContent = "🔹 派生属性";
     header.style.fontWeight = "bold";
     list.appendChild(header);
 
@@ -1857,7 +1857,7 @@ function saveEdgeProperties() {
   // ✅ 制度的属性の取得
   const isRequired = document.getElementById("edgeRequiredCheckbox").checked;
 
-  // ✅ edge_id フィールドに反映
+  // ✅ edge_id 属性に反映
   const isProjectionEdge = implType.startsWith("*object<");
   if (isProjectionEdge) {
     selectedEdge.removeData("identifier");// edgeでは、identifier自体無いが、既存モデルデータで含まれている属性を削除するために削除する。★
@@ -1921,7 +1921,7 @@ function convertIncludeToRef() {
       target: originalSource,
       label: "ref",
       type: "oneToOne-ref",
-      rel_type: "ref",        // タイプ設定フィールドに設定
+      rel_type: "ref",        // タイプ設定属性に設定
       org_type: edgeData.type
     }
   };
@@ -1964,7 +1964,7 @@ function convertRefToInclude() {
       target: originalSource,
       label: "include",
       type: "oneToMany-include",
-      rel_type: "ref",        // タイプ設定フィールドに設定
+      rel_type: "ref",        // タイプ設定属性に設定
       org_type: edgeData.type
     }
   };
@@ -2054,7 +2054,7 @@ document.getElementById("importBusinessFields").addEventListener("change", (even
     const model = parseBusinessFieldsText(text);
     console.log("読み込んだモデル:", model);
     applyModelToGraph(model, cy_model);
-    alert("ビジネスフィールドを読み込みました！");
+    alert("ビジネス属性を読み込みました！");
     event.target.value = ""; // ← これがポイント！
   };
   reader.readAsText(file);
@@ -2123,7 +2123,7 @@ function applyModelToGraph(model, cy) {
           identifier: def.identifier || false,
           desc: def.description || ""
         }));
-      node.data('fields', fields); // ← フィールドに責務付きで反映
+      node.data('fields', fields); // ← 属性に責務付きで反映
     }
   });
 }
@@ -2159,7 +2159,7 @@ function validateGraph(nodes, edges) {
       errors.push(`Node ${nodeId} is missing impl_name.`);
     }
 
-    // フィールドごとのチェック
+    // 属性ごとのチェック
     fields.forEach((f, i) => {
       // name/type が必須
       if (!f.name) errors.push(`Field ${i} in node ${implName || nodeId} has no name.`);
@@ -2500,7 +2500,7 @@ function makeSimpleJson(nodes, edges, cur_node) {
     const fields = node.data("fields") || [];
     console.log(index);
 
-    // フィールド処理
+    // 属性処理
     fields.forEach(f => {
       if (f.discriminator){
         json[f.name] = f.type;
@@ -2517,7 +2517,7 @@ function makeSimpleJson(nodes, edges, cur_node) {
       }
     });
 
-    // ✅ include エッジからフィールドを追加
+    // ✅ include エッジから属性を追加
     edges.filter(e =>
       e.data("source") === node.data("id") &&
       e.data("rel_type") === "include" &&
@@ -2539,7 +2539,7 @@ function makeSimpleJson(nodes, edges, cur_node) {
 
     });
 
-    // ref エッジからフィールドを追加
+    // ref エッジから属性を追加
     edges.filter(e =>
       e.data("source") === node.data("id") &&
       e.data("rel_type") === "ref" &&
