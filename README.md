@@ -38,7 +38,7 @@ json-modeler/
 │  ├─ graph-script-futoshiki.txt ← 不等式パズルのGraph Scriptファイル例
 │  └─ graph-script-sudoku.txt ← 数独のGraph Scriptファイル例
 └─ models/
-   └─ json-graph-futoshiki-20260127-1305.json ← 不等式データモデルの例
+   └─ json-graph-futoshiki-20260127-1305.json ← 不等式パズルのデータモデル例
 ```
 ---
 example/mk_graph_script.bat は、引数にモデル名を指定して実行します。  
