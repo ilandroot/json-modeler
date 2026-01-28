@@ -219,6 +219,24 @@ option.non-generic {
   border-bottom: 1px solid white;
   font-weight: bold;
 }
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+  font-size: 14px;
+}
+.toast.show {
+  opacity: 1;
+}
+
   </style>
   <!-- CDNライブラリ読み込み -->
   <script src="https://unpkg.com/cytoscape@3.27.0/dist/cytoscape.min.js"></script>
@@ -476,6 +494,9 @@ option.non-generic {
   <button onclick="closePreviewDialog()">閉じる</button>
   <button onclick="copyPreviewJson()">コピー</button>
   </div>
+
+  <!-- トースト表示用 -->
+  <div id="toast" class="toast">コピーしました</div>
 
 <script>
 
@@ -2557,6 +2578,16 @@ function previewJson() {
 }
 
 //プレビューダイアログ関係
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 1500);
+}
+
 function openPreviewDialog(title,jsonString) {
   const dialog = document.getElementById("previewDialog");
   const content = document.getElementById("previewContent");
@@ -2589,7 +2620,9 @@ function closePreviewDialog() {
 function copyPreviewJson() {
   const text = document.getElementById("previewContent").textContent;
   navigator.clipboard.writeText(text);
-  alert("JSONをコピーしました！");
+  // alert("JSONをコピーしました！");
+  showToast("コピーしました");
+
 }
 
 function toJsObjectLiteral(jsonString) {
