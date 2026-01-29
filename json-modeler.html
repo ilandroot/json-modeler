@@ -1514,10 +1514,15 @@ function deleteSelected() {
     return;
   }
   cy_model.remove(selected);
+  // 削除後処理
+  closeAllDialogs();
+  clearSelection();
+
 }
 
 // 選択解除
 function clearSelection() {
+  selectedNode = null;
   selectedEdge = null;
   cy_model.elements().unselect();
 }
