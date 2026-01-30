@@ -769,6 +769,13 @@ function bindNodeEvents(cy) {
     const node = evt.target;
     selectedNode = node;
     selectedEdge = null;//選択エッジを解放
+    
+    // Ctrl+クリック → プレビュー表示
+    if (evt.originalEvent.ctrlKey) {
+      previewJson();   // ← プレビューボタンクリックと同じ
+      return;
+    }
+
     document.getElementById('fieldEditor').style.display = 'block';
     openFieldEditor(node);
     updateAttrList(node.data().fields || []);
