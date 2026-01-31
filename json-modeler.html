@@ -774,8 +774,8 @@ function bindNodeEvents(cy) {
     selectedNode = node;
     selectedEdge = null;//選択エッジを解放
     
-    // Ctrl+クリック → プレビュー表示
-    if (evt.originalEvent.ctrlKey) {
+    // Alt+クリック → プレビュー表示
+    if (evt.originalEvent.altKey) {
       previewJson();   // ← プレビューボタンクリックと同じ
       return;
     }
