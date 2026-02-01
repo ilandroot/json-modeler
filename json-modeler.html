@@ -224,6 +224,33 @@ option.non-generic {
   font-weight: bold;
 }
 
+/* ノード編集ダイアログ */
+#fieldEditor {
+  position: fixed;
+  right: 20px;
+  top: 60px; /* メニューバーの下に揃える */
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 10px;
+  max-height: 90vh;
+  overflow: auto;
+  display: none;
+}
+
+/* エッジ編集ダイアログ */
+#edgeEditPanel {
+  position: fixed;
+  top: 60px;
+  left: 20px;
+  width: 430px;        /* ← これが重要 */
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 10px;
+  max-height: 90vh;
+  overflow: auto;
+  display: none;
+}
+
 .toast {
   position: fixed;
   top: 60px;
@@ -343,7 +370,7 @@ option.non-generic {
 </div>
 
   <!-- ノード属性編集用 -->
-  <div id="fieldEditor" style="display:none; position:fixed; right:20px; top:80px; background:#fff; border:1px solid #ccc; padding:10px;">
+  <div id="fieldEditor" >
   <h3>属性追加</h3>
   <div id="currentNodeInfo" style="margin-bottom:10px; font-size:14px; color:#333;">
   <div>ノード名: <strong id="nodeLabelText"></strong></div>
@@ -427,7 +454,7 @@ option.non-generic {
   </div>
   
   <!-- エッジ名、実装名設定-->
-  <div id="edgeEditPanel" style="display: none;">
+  <div id="edgeEditPanel" >
     <h3>エッジ編集</h3>
     <!-- 表示専用: Source / Target / Type -->
     <p>接続元: <span id="edgeSourceName"></span></p>
