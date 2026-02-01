@@ -878,12 +878,16 @@ function bindEdgeEvents(cy) {
       implInput.value = "";
       implInput.style.display = "none";
       implLabel.style.display = "none";
-      requiredCheckbox.checked = false;
-      requiredCheckbox.disabled = true;
+      // ★ 追加：required チェックボックスを非表示
+      requiredCheckbox.closest("label").style.display = "none";
+
+
     } else {
       implInput.style.display = "block";
       implLabel.style.display = "block";
-      requiredCheckbox.disabled = false;
+      // ★ 追加：通常時は表示
+      requiredCheckbox.closest("label").style.display = "block";
+
     }
 
     // subtype の場合は最優先で無効化
