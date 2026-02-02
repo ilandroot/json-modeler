@@ -32,23 +32,7 @@ html, body {
   margin-bottom: 8px;
 }
 
-#implEditor {
-  display: none;
-  position: fixed;
-  left: 20px;
-  top: 100px;
-  background: #fff;
-  border: 1px solid #ccc;
-  padding: 15px;
-  z-index: 999;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
-}
 
-#implEditor table {
-  display: block;
-  max-height: 400px;
-  overflow-y: auto;
-}
 
 .generic-row {
   background-color: #eef;
@@ -67,18 +51,6 @@ html, body {
 #currentNodeInfo {
   line-height: 1.4;
   word-break: break-all;
-}
-
-#edgeEditPanel {
-  position: fixed;
-  top: 120px;
-  left: 120px;
-  background: #fff;
-  padding: 15px;
-  border: 1px solid #888;
-  box-shadow: 0 0 6px rgba(0,0,0,0.3);
-  display: none;
-  z-index: 9000; /* modalOverlayより後ろに */
 }
 
 #attrType {
@@ -114,6 +86,8 @@ html, body {
   padding: 6px;
   background-color: #f0f0f0;
   border-bottom: 1px solid #ccc;
+  position: relative;
+  z-index: 2000; /* ダイアログより前に出す */
 }
 
 .menuGroup {
@@ -162,8 +136,9 @@ option.non-generic {
   color: #000;
 }
 
+/* 初期状態は非表示 */
 .dialog {
-  display: none; /* 初期状態は非表示 */
+  display: none; 
   position: fixed;
   top: 20%;
   left: 20%;
@@ -178,7 +153,7 @@ option.non-generic {
 /* JSON 表示関係 プレビュー */
 
 #previewDialog {
-  position: absolute;
+  position: fixed; /* absolute;*/
   top: 60px;   /* メニューバーの下に配置 */
   left: 20px;  /* 必要なら調整 */
   max-height: 70vh;
@@ -240,15 +215,58 @@ option.non-generic {
 /* エッジ編集ダイアログ */
 #edgeEditPanel {
   position: fixed;
-  top: 60px;
-  left: 20px;
-  width: 430px;        /* ← これが重要 */
+  right: 20px;
+  top: 60px; /* メニューバー直下に揃える */
   background: #fff;
   border: 1px solid #ccc;
   padding: 10px;
-  max-height: 90vh;
-  overflow: auto;
   display: none;
+  width: 360px; /* 必要に応じて調整 */
+  z-index: 1000; /* メニューより後ろ、追加ダイアログより上 */
+}
+
+/* ノード追加ダイアログ */
+#nodeDialog {
+  position: fixed;
+  left: 20px;
+  top: 60px; /* メニューバーの下に揃える */
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 10px;
+  display: none;
+  width: 300px; /* 必要に応じて調整 */
+}
+
+/* エッジ追加ダイアログ */
+#edgeDialog {
+  position: fixed;
+  left: 20px;
+  top: 60px; /* ノード追加と同じ位置に揃える */
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 10px;
+  display: none;
+  width: 300px; /* 必要なら調整 */
+  z-index: 1000; /* メニューより後ろ、編集ダイアログより下 */
+}
+
+/* ノード実装名一覧設定ダイアログ */
+#implEditor {
+  position: fixed;
+  right: 20px;
+  top: 60px; /* メニューバー直下に揃える */
+  background: #f4f4f4;
+  border: 1px solid #ccc;
+  padding: 15px;
+  display: none;
+  width: 360px; /* 必要なら調整 */
+  z-index: 1000; /* メニューより後ろ、他の編集ダイアログと同じ層 */
+}
+
+#implEditor table {
+  display: block;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .toast {
@@ -396,7 +414,7 @@ option.non-generic {
   </div>
 
   <!-- ノード追加 -->
-  <div id="nodeDialog" style="display:none; position:fixed; left:20px; top:80px; background:#fff; border:1px solid #ccc; padding:10px;">
+  <div id="nodeDialog">
   <h3>ノード追加</h3>
   <label> 名前 <input id="nodeName" type="text"></label><br>
   <label>
@@ -408,7 +426,7 @@ option.non-generic {
   </div>
 
   <!-- エッジ追加 -->
-  <div id="edgeDialog" style="display:none; position:fixed; left:20px; top:200px; background:#fff; border:1px solid #ccc; padding:10px;">
+  <div id="edgeDialog">
     <h3>エッジ追加</h3>
 
     <label>Source:
@@ -443,7 +461,7 @@ option.non-generic {
   </div>
   
   <!-- 実装名一覧設定（ノード） -->
-  <div id="implEditor" style="position:fixed; left:20px; top:100px; background:#f4f4f4; border:1px solid #ccc; padding:15px;">
+  <div id="implEditor">
     <h3>ノード一覧 実装名編集</h3>
     <input type="text" placeholder="論理名で検索…" oninput="filterNodes(this.value)">
     <table id="implTable" border="1" cellpadding="4">
@@ -2767,7 +2785,6 @@ function setPreviewMode(mode) {
 
   updatePreviewContent();
 }
-
 
 </script>
 
