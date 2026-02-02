@@ -1851,6 +1851,7 @@ function openTypeSelector(setElem, isEdge = false) {
       const implInput = document.getElementById("edgeImplInput");
       const implLabel = document.getElementById("edgeImplLabel");
       const requiredCheckbox = document.getElementById("edgeRequiredCheckbox");
+      const requiredLabel = requiredCheckbox.closest("label");
 
       if (isEdge && selectedEdge && finalType.startsWith("*object<")) {
         selectedEdge.data("impl_name", "");
@@ -1858,12 +1859,19 @@ function openTypeSelector(setElem, isEdge = false) {
         implInput.style.display = "none";
         implLabel.style.display = "none";
 
+        // ★ 追加：必須チェックを非表示にする
+        requiredLabel.style.display = "none";
+
         // ✅ 必須チェックを完全に無効化
         requiredCheckbox.checked = false;
         requiredCheckbox.disabled = true;
       } else {
         implInput.style.display = "block";
         implLabel.style.display = "block";
+
+        // ★ 追加：通常型に戻したら再表示
+        requiredLabel.style.display = "inline-block";
+
         requiredCheckbox.disabled = false;
       }
 
