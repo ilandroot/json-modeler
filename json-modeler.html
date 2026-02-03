@@ -154,10 +154,15 @@ option.non-generic {
 
 #previewDialog {
   position: fixed;
-  top: 60px;   /* メニューバーの下に配置 */
-  left: 20px;  /* 必要なら調整 */
+  top: 60px;
+  left: 20px;
+  width: 500px;        /* ← これだけで劇的に扱いやすくなる */
   max-height: 70vh;
   overflow: auto;
+  background: #f4f4f4; /* プレビューは白のままで正解 */
+  border: 1px solid #ccc;
+  padding: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
 }
 
 #previewContent {
@@ -173,9 +178,9 @@ option.non-generic {
 #previewContent {
   max-height: 60vh;   /* JSON 部分だけに高さ制限 */
   overflow: auto;     /* JSON 部分にスクロールバーを出す */
-  background: #f9f9f9;
+  background: #fff;
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   white-space: pre;   /* 改行保持、横スクロール許可 */
 }
 
