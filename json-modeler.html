@@ -59,20 +59,35 @@ html, body {
   padding: 4px;
 }
 
-#typeModal {
-  position: fixed;
-  z-index: 10000; /* modalOverlayより前に */
-}
-
 #modalOverlay {
+  display: none;
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background: rgba(0,0,0,0.3);
-  z-index: 9999; /* 最前面に */
+  z-index: 9999;
   pointer-events: auto;
+}
+
+#typeModal {
+  display: none;
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 10px;
+  z-index: 10000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+#typeOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 #projectionFieldsList {
@@ -522,14 +537,12 @@ option.non-generic {
   </div>
 
   <!-- ダイアログ追加（ノードおよびエッジ。データ型選択用）-->
-  <div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-  background:rgba(0,0,0,0.3); z-index:9999;"></div>
-  <div id="typeModal" style="display:none; position:fixed; top:30%; left:50%; transform:translateX(-50%);
-  background:#fff; border:1px solid #ccc; padding:10px; z-index:10000; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+  <div id="modalOverlay"></div>
+
+  <div id="typeModal">
   <h4>型を選択してください</h4>
-  <div id="typeOptions" style="display:flex; flex-wrap:wrap; gap:8px;">
-    <!-- ボタンはJSで生成 -->
-  </div><br>
+  <div id="typeOptions"></div>
+  <br>
   <button onclick="closeTypeModal()">閉じる</button>
   </div>
 
