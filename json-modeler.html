@@ -945,7 +945,6 @@ let model_st = [
       'width': 'label',
       'height': 'label',
       'padding': '10px',
-      // 'background-color': '#555',  // 通常ノード：既存の濃灰色
       'label': 'data(label)',
       'color': '#fff',
       'font-size': '10px',
@@ -1094,7 +1093,6 @@ let model_st = [
       }
   },
   {
-      // subtype（派生） → 緑色・細め・triangle-backcurve（または triangle）
       selector: 'edge[type = "subtype"]',
       style: {
         'line-style': 'solid',
@@ -1109,7 +1107,6 @@ let model_st = [
     style: {
       'border-width': 3,
       'border-color': '#f39c12',
-      // 'background-color': '#666'
     }
   },
   {
@@ -1137,7 +1134,7 @@ const cy = cytoscape({
     edgeSep: 30,
     rankSep: 100
   },
-  wheelSensitivity: 0.2 //0.5 //1.0 // ← これがズーム感度
+  wheelSensitivity: 0.2 // ← これがズーム感度
 });
 
 cy_model = cy;
@@ -1181,7 +1178,7 @@ document.getElementById('save').addEventListener('click', async () => {
 
     const json = cy_model.elements().jsons();
     const writable = await fileHandle.createWritable();
-    const content = JSON.stringify(json, null, 2);// 'ここに保存したいテキストを入れる'; // ← 実際のデータに置き換えてください
+    const content = JSON.stringify(json, null, 2);// ここに保存したいテキストを入れる
     await writable.write(content);
     await writable.close();
     console.log('保存完了:', fileHandle.name);
@@ -1464,7 +1461,7 @@ document.getElementById('fileInput').addEventListener('change', event => {
         elements: json,
         style: model_st, // 既存スタイル配列
         layout: { name: 'preset' }, // ← 保存された位置で表示！
-        wheelSensitivity: 0.2 //0.5 //1.0 // ← これがズーム感度
+        wheelSensitivity: 0.2 // ← これがズーム感度
       });
       bindNodeEvents(cy_model);
       bindEdgeEvents(cy_model);
@@ -1649,7 +1646,6 @@ function updateNodeLabels(mode = 'default') {
         label = node.data('impl_name')?.trim();
         label = label ? label : '<undefined>';
         break;
-
     }
 
     node.data('label', label);
@@ -2051,8 +2047,6 @@ function convertIncludeToRef() {
   document.getElementById("conversionNotice").textContent =
     `✅ include から ref に変換されました。元種別: ${newEdge.data("org_type")}`;
 
-  // 必要なら再レイアウト
-  // cyInstance.layout({ name: 'preset' }).run();
 }
 
 function convertRefToInclude() {
@@ -2093,8 +2087,7 @@ function convertRefToInclude() {
   document.getElementById("edgeImplInput").value = newEdge.data("impl_name") || "";
   document.getElementById("conversionNotice").textContent =
     `✅ ref から include に変換されました。元種別: ${newEdge.data("org_type")}`;
-
-  // cyInstance.layout({ name: 'preset' }).run(); // 必要なら再レイアウト
+    
 }
 
 function closeEdgeEdit() {
@@ -2185,7 +2178,6 @@ document.addEventListener('keydown', function (e) {
   // Ctrl + R（keyCode 82）
   if (e.ctrlKey && e.keyCode === 82) {
     e.preventDefault();
-    // alert("Ctrl+Rによるリロードは無効です。");
     console.log("Ctrl+Rによるリロードは無効です。");
   }
 });
@@ -2454,7 +2446,7 @@ function checkGraph() {
       (errors.length > 2 ? `\n(3) ...` : "")
     );
   } else {
-    alert(`モデルの整合性チェックで、問題は見つかりませんでした。`);
+    showToast(`モデルの整合性チェックで、問題は見つかりませんでした。`);
   }
   return;
 }
