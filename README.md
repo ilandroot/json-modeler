@@ -1,4 +1,6 @@
 # json-modeler (Minimal JSON Modeling Tool)
+# json-modeler
+Version: v1.0.0
 
 json-modeler は、JSON モデリングの構造と意味を直感的に理解するための  
 **最小構成の GUI ツール**です。
