@@ -86,6 +86,21 @@ v22.14.0
 
 npm install -g live-server
 
+## ■ json-modeler を通常の Windows アプリとして起動する
+
+json-modeler は単一の `json-modeler.html` だけで動作するローカルツールです。
+Web サーバーは不要で、HTML ファイルを直接ブラウザで開くだけで利用できます。
+
+### Windows 11 でアプリのように使う方法（Edge）
+1. `json-modeler.html` を Microsoft Edge で開く  
+2. 右上のメニューから **「アプリ」→「このサイトをアプリとしてインストール」** を選択  
+3. 名前を「json-modeler」としてインストール
+
+これにより、json-modeler をスタートメニューやタスクバーから
+通常のアプリのように起動できます。
+
+※ Edge が内部的に `localhost` と表示する場合がありますが、
+実際にはローカルファイルを開いているだけで、Web サーバーは不要です。
 
 ---
 
