@@ -592,10 +592,6 @@ function newModel(){
   closeAllDialogs();
 }
 
-//モデルデータインポート機能用
-function importNGraphScript(){
-
-}
 document.getElementById('importModelBtn').addEventListener('click', () => {
   document.getElementById('modelFileInput').click();
   closeAllMenus();
@@ -1688,15 +1684,6 @@ function updateEdgeLabels(mode = 'default') {
 }
 
 // 実装名設定
-function toSnakeCase(str) {
-  return str
-    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)) // 全角→半角
-    .replace(/[^\w\s]/g, '') // 記号除去
-    .replace(/\s+/g, '_')    // 空白 → _
-    .replace(/([A-Z])/g, '_$1')
-    .toLowerCase()
-    .replace(/^_+/, '');
-}
 
 function openImplEditor() {
   closeAllDialogs();
@@ -1922,11 +1909,6 @@ function closeTypeModal() {
   document.getElementById("modalOverlay").style.display = "none";//モーダル背景
 }
 
-function applySuggestion(btn) {
-  const suggestion = btn.getAttribute('data-suggestion');
-  btn.parentElement.previousElementSibling.firstElementChild.value = suggestion;
-}
-
 function saveImplNames() {
   const inputs = document.querySelectorAll('.impl-input');
   inputs.forEach(input => {
@@ -2093,79 +2075,6 @@ function convertRefToInclude() {
 
 function closeEdgeEdit() {
   document.getElementById('edgeEditPanel').style.display = 'none';
-}
-
-// ノード抽出＋意味モデル構築
-function buildSimplifiedModel(elements) {
-  const model = {};
-  elements
-    .filter(el => el.group === "nodes")
-    .forEach(el => {
-      const label = el.data.label || el.data.id;
-      const attributes = el.data.fields || [];
-      model[label] = {};
-      attributes.forEach(attr => {
-        model[label][attr.name] = {
-          type: attr.type || "string",
-          required: attr.required || false,
-          discriminator: attr.discriminator || false,
-          identifier: attr.identifier || false,
-          description: attr.desc || ""
-        };
-      });
-    });
-  return model;
-}
-
-// テキスト形式に変換
-function generateModelText(model) {
-  let output = "# Business Fields Model\n";
-  output += "# 属性名: 型 [required] [discriminator] [identifier] - 説明\n\n";
-
-  for (const [section, fields] of Object.entries(model)) {
-    output += `[${section}]\n`;
-    for (const [name, info] of Object.entries(fields)) {
-      const flags = [];
-      if (info.required) flags.push("[required]");
-      if (info.discriminator) flags.push("[discriminator]");
-      if (info.identifier) flags.push("[identifier]");
-
-      const flagText = flags.length ? " " + flags.join(" ") : "";
-      const description = info.description || "";
-      output += `${name}: ${info.type}${flagText} - ${description}\n`;
-    }
-    output += `\n`;
-  }
-
-  return output;
-}
-
-// ダウンロード処理
-function downloadTextFile(filename, content) {
-  const blob = new Blob([content], { type: "text/plain" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(link.href);
-}
-
-function applyModelToGraph(model, cy) {
-  cy.nodes().forEach(node => {
-    const label = node.data('id');
-    if (model[label]) {
-      const fields = Object.entries(model[label])
-        .map(([name, def]) => ({
-          name,
-          type: def.type || "string",
-          required: def.required || false,
-          discriminator: def.discriminator || false,
-          identifier: def.identifier || false,
-          desc: def.description || ""
-        }));
-      node.data('fields', fields); // ← 属性に責務付きで反映
-    }
-  });
 }
 
 //リロードブロック
@@ -2343,86 +2252,6 @@ function validateGraph(nodes, edges) {
   return errors;
 }
 
-// 親ノードの再帰的展開
-function collectInheritedAttributes(nodeId, nodes, edges) {
-  const mergedProperties = {};
-  const mergedRequired = [];
-  const visited = new Set();
-  let discriminatorField = null;
-
-  function recurse(currentId) {
-    if (visited.has(currentId)) return;
-    visited.add(currentId);
-
-    const node = nodes.find(n => n.data('id') === currentId);
-    if (!node) return;
-
-    const implName = node.data('impl_name') || "";
-    const fields = node.data('fields') || [];
-
-    // ノード自身の fields を展開
-    fields.forEach(f => {
-      if (!f.name) return;
-      if (f.discriminator) {
-        // mergedProperties[f.name] = { const: implName };
-        mergedProperties[f.name] = { type: f.type }; // ✅ constは設定しない
-        discriminatorField = f.name;
-      } else {
-        mergedProperties[f.name] = { type: f.type };
-      }
-      if (f.required) mergedRequired.push(f.name);
-    });
-
-    // ノードが持つ通常エッジ属性を展開
-    edges.forEach(edge => {
-      if (edge.data("source") === currentId && edge.data("rel_type") !== "subtype") {
-        const impl_name = edge.data("impl_name");
-        const impl_type = edge.data("impl_type");
-        const required = edge.data("required");
-        const identifier = edge.data("identifier");
-
-        if (!impl_name || !impl_type) return;
-
-        let fieldSchema;
-        if (impl_type.startsWith("array<")) {
-          const itemType = impl_type.match(/^array<(.+)>$/)[1];
-          let itemsSchema;
-
-          if (["string", "number", "boolean", "integer"].includes(itemType)) {
-            itemsSchema = { type: itemType }; // ✅ プリミティブ型は直接 type にする
-          } else {
-            itemsSchema = { $ref: `#/definitions/${itemType}` }; // ✅ オブジェクト型は $ref
-          }
-
-          fieldSchema = {
-            type: "array",
-            items: itemsSchema
-          };
-
-        } else if (impl_type.startsWith("object<")) {
-          const objType = impl_type.match(/^object<(.+)>$/)[1];
-          fieldSchema = { $ref: `#/definitions/${objType}` };
-        } else {
-          fieldSchema = { type: impl_type };
-        }
-
-        if (identifier) fieldSchema.identifier = true;
-        mergedProperties[impl_name] = fieldSchema;
-        if (required) mergedRequired.push(impl_name);
-      }
-    });
-
-    // subtypeでさらに親を遡る
-    const parentEdges = edges.filter(e =>
-      e.data("rel_type") === "subtype" && e.data("source") === currentId
-    );
-    parentEdges.forEach(e => recurse(e.data("target")));
-  }
-
-  recurse(nodeId);
-  return { mergedProperties, mergedRequired, discriminatorField };
-}
-
 // check JSON Graph
 function checkGraph() {
   const nodes = cy_model.nodes().filter(n => n.group() === 'nodes');
@@ -2450,52 +2279,6 @@ function checkGraph() {
     showToast(`モデルの整合性チェックで、問題は見つかりませんでした。`);
   }
   return;
-}
-
-// ファイル保存関数 downloadTextFile()
-async function saveTextFile(text, defaultFilename = "schema.json") {
-  try {
-    const options = {
-      suggestedName: defaultFilename,
-      types: [
-        {
-          description: "JSON Files",
-          accept: { "application/json": [".json"] },
-        },
-      ],
-    };
-
-    const handle = await window.showSaveFilePicker(options);
-    const writable = await handle.createWritable();
-    await writable.write(text);
-    await writable.close();
-    console.log("✅ ファイル保存完了:", handle.name);
-  } catch (err) {
-    console.warn("❌ 保存がキャンセルされました:", err);
-  }
-}
-
-// identifierリスト抽出(コードブック作成のため)
-function extractIdentifiers(nodes) {
-  const identifiers = [];
-
-  nodes.forEach(node => {
-    const implName = node.data('impl_name') || node.data('id');
-    const fields = node.data('fields') || [];
-
-    fields.forEach(f => {
-      if (f.identifier === true) {
-        identifiers.push({
-          node: implName,
-          field: f.name || '(unnamed)',
-          type: f.type || '(unknown)',
-          description: f.description || ''
-        });
-      }
-    });
-  });
-
-  return identifiers;
 }
 
 function expandObjectField(nodes, edges, implName) {
