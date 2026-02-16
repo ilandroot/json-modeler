@@ -39,10 +39,12 @@ json-modeler/
 ├─ example/
 │  ├─ mk_graph_script.bat ← Graph Scriptファイルを作成するバッチファイル
 │  ├─ graph-script-futoshiki.txt ← 不等式パズルのGraph Scriptファイル例
+│  ├─ graph-script-building.txt ← ビルディングパズルのGraph Scriptファイル例
 │  └─ graph-script-sudoku.txt ← 数独のGraph Scriptファイル例
 └─ models/
 │  └─ json-graph-futoshiki-20260127-1305.json ← 不等式パズルのデータモデル例
 └─ futoshiki-solver/  ← 不等式パズルのデータモデルを使って作成したソルバープログラム一式
+└─ building-solver/  ← ビルディングパズルのデータモデルを使って作成したソルバープログラム一式
 ```
 ---
 example/mk_graph_script.bat は、引数にモデル名を指定して実行します。  
