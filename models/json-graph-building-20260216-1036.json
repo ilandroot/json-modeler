@@ -1,0 +1,480 @@
+[
+  {
+    "data": {
+      "id": "ビルディングパズル",
+      "label": "ビルディングパズル",
+      "isGenericType": false,
+      "impl_name": "building",
+      "fields": [
+        {
+          "name": "size",
+          "type": "integer",
+          "desc": "サイズ",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        }
+      ]
+    },
+    "position": {
+      "x": 205.8904359913521,
+      "y": 37.94718102214727
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "セル",
+      "label": "セル",
+      "isGenericType": false,
+      "impl_name": "cell",
+      "fields": [
+        {
+          "name": "row",
+          "type": "integer",
+          "desc": "行",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        },
+        {
+          "name": "col",
+          "type": "integer",
+          "desc": "列",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        },
+        {
+          "name": "num",
+          "type": "integer",
+          "desc": "階数",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        },
+        {
+          "name": "cell_type",
+          "type": "string",
+          "desc": "セルタイプ",
+          "required": true,
+          "discriminator": true,
+          "identifier": false
+        }
+      ]
+    },
+    "position": {
+      "x": 375.36224621282486,
+      "y": -47.97858944568685
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "ヒントセル",
+      "label": "ヒントセル",
+      "isGenericType": false,
+      "impl_name": "hint"
+    },
+    "position": {
+      "x": 516.0082175796255,
+      "y": -100.61848899620355
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "入力セル",
+      "label": "入力セル",
+      "isGenericType": false,
+      "impl_name": "input",
+      "fields": [
+        {
+          "name": "options",
+          "type": "array<integer>",
+          "desc": "階数候補",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        }
+      ]
+    },
+    "position": {
+      "x": 513.8768775429239,
+      "y": -21.18593930415531
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "ビュー",
+      "label": "ビュー",
+      "isGenericType": false,
+      "impl_name": "view",
+      "fields": [
+        {
+          "name": "view_type",
+          "type": "string",
+          "desc": "ビュータイプ",
+          "required": true,
+          "discriminator": true,
+          "identifier": false
+        },
+        {
+          "name": "count",
+          "type": "integer",
+          "desc": "見えるビル数",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        }
+      ]
+    },
+    "position": {
+      "x": 379.60849112697696,
+      "y": 114.41684548027847
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "Nビュー",
+      "label": "Nビュー",
+      "isGenericType": false,
+      "impl_name": "N",
+      "fields": [
+        {
+          "name": "col",
+          "type": "integer",
+          "desc": "列",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        }
+      ]
+    },
+    "position": {
+      "x": 514.3190596304579,
+      "y": 32.65167770934406
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "Sビュー",
+      "label": "Sビュー",
+      "isGenericType": false,
+      "impl_name": "S",
+      "fields": [
+        {
+          "name": "col",
+          "type": "integer",
+          "desc": "列",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        }
+      ]
+    },
+    "position": {
+      "x": 589.6634558681715,
+      "y": 70.60278478443378
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "Eビュー",
+      "label": "Eビュー",
+      "isGenericType": false,
+      "impl_name": "E",
+      "fields": [
+        {
+          "name": "row",
+          "type": "integer",
+          "desc": "行",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        }
+      ]
+    },
+    "position": {
+      "x": 597.9314768103775,
+      "y": 134.14882453807238
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "id": "Wビュー",
+      "label": "Wビュー",
+      "isGenericType": false,
+      "impl_name": "W",
+      "fields": [
+        {
+          "name": "row",
+          "type": "integer",
+          "desc": "行",
+          "required": true,
+          "discriminator": false,
+          "identifier": false
+        }
+      ]
+    },
+    "position": {
+      "x": 528.5321158314697,
+      "y": 187.98644155157174
+    },
+    "group": "nodes",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": false,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "ビルディングパズル",
+      "target": "セル",
+      "type": "oneToMany-include",
+      "rel_type": "include",
+      "rel_name": "盤面",
+      "label": "盤面",
+      "id": "f1de0a74-66f7-429b-a443-d17782e8a876",
+      "impl_name": "cells",
+      "impl_type": "array<cell>",
+      "required": true,
+      "projection_fields": []
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "ヒントセル",
+      "target": "セル",
+      "type": "subtype",
+      "rel_type": "subtype",
+      "label": "subtype",
+      "id": "8df42b2c-6d53-4225-9f75-45af5a58d2c1"
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "入力セル",
+      "target": "セル",
+      "type": "subtype",
+      "rel_type": "subtype",
+      "label": "subtype",
+      "id": "cb331130-1845-4886-bbaf-6d8d76f13062"
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "ビルディングパズル",
+      "target": "ビュー",
+      "type": "oneToMany-include",
+      "rel_type": "include",
+      "rel_name": "ビュー",
+      "label": "ビュー",
+      "id": "53477b0b-6952-4206-a718-2ec005e4b873",
+      "impl_name": "views",
+      "impl_type": "array<view>",
+      "required": true,
+      "projection_fields": []
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "Nビュー",
+      "target": "ビュー",
+      "type": "subtype",
+      "rel_type": "subtype",
+      "label": "subtype",
+      "id": "573b069f-a525-467b-816a-0d598b3c2406"
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "Sビュー",
+      "target": "ビュー",
+      "type": "subtype",
+      "rel_type": "subtype",
+      "label": "subtype",
+      "id": "9bbb4e57-76d6-49df-843e-1dbffa947409"
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "Eビュー",
+      "target": "ビュー",
+      "type": "subtype",
+      "rel_type": "subtype",
+      "label": "subtype",
+      "id": "5f0e8b20-d4d3-4d50-8d45-665d7450d35b"
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  },
+  {
+    "data": {
+      "source": "Wビュー",
+      "target": "ビュー",
+      "type": "subtype",
+      "rel_type": "subtype",
+      "label": "subtype",
+      "id": "21f922d2-e258-452f-8c27-7ffc331e03f5"
+    },
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "group": "edges",
+    "removed": false,
+    "selected": false,
+    "selectable": true,
+    "locked": false,
+    "grabbable": true,
+    "pannable": true,
+    "classes": ""
+  }
+]
