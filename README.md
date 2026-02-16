@@ -42,6 +42,7 @@ json-modeler/
 │  ├─ graph-script-building.txt ← ビルディングパズルのGraph Scriptファイル例
 │  └─ graph-script-sudoku.txt ← 数独のGraph Scriptファイル例
 └─ models/
+│  ├─ json-graph-building-20260216-1036.json ← ビルディングパズルのデータモデル例
 │  └─ json-graph-futoshiki-20260127-1305.json ← 不等式パズルのデータモデル例
 └─ futoshiki-solver/  ← 不等式パズルのデータモデルを使って作成したソルバープログラム一式
 └─ building-solver/  ← ビルディングパズルのデータモデルを使って作成したソルバープログラム一式
