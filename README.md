@@ -18,7 +18,8 @@ web server上に配置しても動作しますが、ローカル環境では、w
 ## ■ 特徴
 
 - `json-modeler.html` 1 ファイルで動作  
-- include / ref / *object<> / array<> の意味論を忠実に反映  
+- include / ref / *object<> / array<> の意味論を忠実に反映
+- Graph Scriptファイルの読み込み機能
 - ノードとエッジによる直感的なモデリング  
 - JSON 自動生成  
 - バリデーション機能  
