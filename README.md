@@ -49,7 +49,8 @@ json-modeler/
 └─ building-solver/  ← ビルディングパズルのデータモデルを使って作成したソルバープログラム一式
 ```
 ---
-example/mk_graph_script.bat は、引数にモデル名を指定して実行します。  
+グラフスクリプトファイルを作成する場合は、ファイル名にモデル名を含ませて定義することが効率的です。  
+example/mk_graph_script.bat は、引数にモデル名を指定して、元となる、Graph Scriptファイルを作成します。  
 例:  
  mk_graph_script.bat futoshiki  
 
