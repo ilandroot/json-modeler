@@ -1823,7 +1823,13 @@ function updateProjectionFieldsList(finalType, targetNode, cy_model, edge) {
     });
   }
 
-  section.style.display = "block";
+  // section.style.display = "block";
+  if (finalType.startsWith("array<") || finalType.startsWith("object<") || finalType.startsWith("*object<")) {
+    section.style.display = "block";
+  } else {
+    section.style.display = "none";
+  }
+
 }
 
 // 型選択GUI(ノード・エッジ共通)
