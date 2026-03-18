@@ -531,6 +531,13 @@ option.non-generic {
       </div>
     </div>
 
+    <div id="mapKeySection" style="margin-top:12px; display:none;">
+      <label>map の key に使う属性 (map_key):</label><br>
+      <select id="mapKeySelect" style="margin-left:8px; width:150px;">
+        <!-- 動的に属性一覧を追加 -->
+      </select>
+    </div>
+
     <label><input type="checkbox" id="edgeRequiredCheckbox" /> 必須 (required)</label><br>
     <hr>
     <button onclick="saveEdgeProperties()">保存</button>
@@ -899,6 +906,31 @@ function bindEdgeEvents(cy) {
     // ✅ *object<> の場合は impl_name 非表示＋ required 無効化
     const implInput = document.getElementById("edgeImplInput");
     const implLabel = document.getElementById("edgeImplLabel");
+
+    // --- map_key の復元処理 ---
+    const implType2 = edge.data("impl_type") || "";
+    if (implType2.startsWith("map<")) {
+
+        // mapKeySection を表示
+        document.getElementById("mapKeySection").style.display = "block";
+
+        // 対象ノードを取得
+        const targetId2 = edge.data("target");
+        const targetNode2 = cy_model.nodes().find(n => n.data("id") === targetId2);
+
+        // 候補をセット
+        populateMapKeySelect(targetNode2);
+
+        // 保存済み map_key を反映
+        const savedKey = edge.data("map_key");
+        if (savedKey) {
+            document.getElementById("mapKeySelect").value = savedKey;
+        }
+
+    } else {
+        // map 以外は非表示
+        document.getElementById("mapKeySection").style.display = "none";
+    }
 
     const requiredCheckbox = document.getElementById("edgeRequiredCheckbox");
 
@@ -1832,13 +1864,31 @@ function updateProjectionFieldsList(finalType, targetNode, cy_model, edge) {
 
 }
 
+function populateMapKeySelect(targetNode) {
+  const select = document.getElementById("mapKeySelect");
+  select.innerHTML = "";
+
+  if (!targetNode) return;
+
+  const fields = targetNode.data("fields") || [];
+
+  fields
+    .filter(f => f.type === "string")
+    .forEach(f => {
+      const opt = document.createElement("option");
+      opt.value = f.name;
+      opt.textContent = f.name;
+      select.appendChild(opt);
+    });
+}
+
 // 型選択GUI(ノード・エッジ共通)
 function openTypeSelector(setElem, isEdge = false) {
   const container = document.getElementById("typeOptions");
   container.innerHTML = ""; // 初期化
 
   const types = isEdge
-  ? ["string", "number", "integer", "boolean", "null", "object", "array<>", "object<>","*object<>"]
+  ? ["string", "number", "integer", "boolean", "null", "object", "array<>", "object<>","*object<>","map<>"]
   : ["string", "number", "integer", "boolean", "null", "object", "array<>", "object<>"];
 
   const relType = selectedEdge?.data("rel_type");
@@ -1863,8 +1913,18 @@ function openTypeSelector(setElem, isEdge = false) {
     
     btn.onclick = () => {
       let finalType = type;
-      if ((type === "array<>" || type === "object<>" || type === "*object<>") && targetImplName !== "") {
+      if ((type === "array<>" || type === "object<>" || type === "*object<>" || type === "map<>") && targetImplName !== "") {
         finalType = type.replace("<>", `<${targetImplName}>`);
+      }
+
+      if (finalType.startsWith("map<")) {
+          if (!targetNode) {
+              console.warn("map<> の targetNode が null です");
+          }
+          document.getElementById("mapKeySection").style.display = "block";
+          populateMapKeySelect(targetNode);
+      } else {
+          document.getElementById("mapKeySection").style.display = "none";
       }
 
       document.getElementById(setElem).value = finalType;
@@ -1991,6 +2051,14 @@ function saveEdgeProperties() {
 
   // ✅ edge に保存
   selectedEdge.data("projection_fields", projectionFields);
+
+  // --- map_key の保存 ---
+  if (implType.startsWith("map<")) {
+    const mapKey = document.getElementById("mapKeySelect")?.value;
+    selectedEdge.data("map_key", mapKey || null);
+  } else {
+    selectedEdge.removeData("map_key");
+  }
   // ここに追加 end
 
   graphLabelUpdate();
@@ -2359,6 +2427,8 @@ function makeSimpleJson(nodes, edges, cur_node) {
       } else if (implType.startsWith("object<")) {
         const targetImpl = implType.match(/^object<(.+)>$/)[1];
         json[implName] = expandObjectField(nodes, edges, targetImpl);
+      } else if (implType.startsWith("map<")) {
+        json[implName] = {};   // ★ ここを追加
       } else if (implType === "object") {
         json[implName] = {}; // 空オブジェクトで初期化
       } else {
@@ -2512,18 +2582,10 @@ function toJsObjectLiteralShorthand(jsonString) {
     if (Array.isArray(value)) {
       return null; // 値は使わない
     }
-
+    // ★ オブジェクトも省略記法扱いにする
     if (value !== null && typeof value === "object") {
-      const entries = Object.entries(value).map(([key, val]) => {
-
-        // ★ プリミティブ値も配列も省略記法にする
-        if (typeof val !== "object" || Array.isArray(val)) {
-          return `${childIndent}${key}`;
-        }
-
-        // オブジェクトは再帰処理
-        const converted = convert(val, indentLevel + 1);
-        return `${childIndent}${key}: ${converted}`;
+      const entries = Object.keys(value).map(key => {
+        return `${childIndent}${key}`;
       });
 
       return `{\n${entries.join(",\n")}\n${indent}}`;
