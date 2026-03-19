@@ -1,0 +1,5 @@
+# model: graph3d 
+[3Dグラフモデル] ->> [ノード] : include
+[3Dグラフモデル] ->> [エッジ] : include
+[エッジ] -> [ノード] : ref (from)
+[エッジ] -> [ノード] : ref (to)
