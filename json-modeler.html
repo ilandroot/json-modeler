@@ -2459,7 +2459,20 @@ function makeSimpleJson(nodes, edges, cur_node) {
       } else {
         // 通常の ref は ID 参照として string を出力
         if (implName) {
-          json[implName] = "string";
+          let type_string = "string";
+
+          // プリミティブ型はそのまま
+          const primitiveTypes = ["integer", "float", "boolean", "string"];
+          if (primitiveTypes.includes(implType)) {
+            type_string = implType;
+          }
+
+          // object<Impl> の場合は "object" として扱う
+          else if (implType.startsWith("object<") || implType.startsWith("map<")) {
+            type_string = "object";
+          }
+
+          json[implName] = type_string;
         }
       }
     });
